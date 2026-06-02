@@ -64,7 +64,7 @@ git init && git add -A && git commit -m "chore: bootstrap from SpecCoding templa
 
 ```bash
 # OpenSpec 中文版（核心规格管理工具）
-npm install -g @openspec-cn/cli
+npm install -g @studyzy/openspec-cn@latest
 
 # Claude Code
 npm install -g @anthropic-ai/claude-code
