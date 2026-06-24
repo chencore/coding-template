@@ -437,33 +437,6 @@ openspec/changes/add-user-auth/
 
 ---
 
-## 配套文章
-
-本模板是以下文章的配套资源：
-
-> 《让 AI 稳定交付全栈项目：我的 Claude Code + OpenSpec + Superpowers 三件套实战》
-
-完整方法论、踩坑细节、更多案例请见文章原文。
-
-### 持续更新跟进
-
-<table>
-  <tr>
-    <td align="center" width="220">
-      <img src="https://cdn.jsdelivr.net/gh/beautifulSoup/speccoding-template@main/docs/wechat-qr.jpg" width="180" alt="公众号二维码" />
-    </td>
-    <td>
-      <h4>📣 公众号：TangoAI实验室</h4>
-      <p>
-        • 每周更新一篇 AI 开发实战硬核干货<br>
-        • 本模板的后续演进与踩坑记录会第一时间同步<br>
-        • 后台回复 <code>spec</code> 可拿到本仓库最新入口 + 资源清单
-      </p>
-    </td>
-  </tr>
-</table>
-
----
 
 ## License
 
