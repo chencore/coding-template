@@ -1,20 +1,8 @@
 # SpecCoding Template
 
-[![License: MIT](https://img.shields.io/github/license/beautifulSoup/speccoding-template?style=flat-square&color=blue)](./LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/beautifulSoup/speccoding-template?style=flat-square&logo=github&color=yellow)](https://github.com/beautifulSoup/speccoding-template/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/beautifulSoup/speccoding-template?style=flat-square&logo=github&color=orange)](https://github.com/beautifulSoup/speccoding-template/network/members)
-[![Last Commit](https://img.shields.io/github/last-commit/beautifulSoup/speccoding-template?style=flat-square&color=green)](https://github.com/beautifulSoup/speccoding-template/commits/main)
-[![Template](https://img.shields.io/badge/use%20this-template-brightgreen?style=flat-square&logo=github)](https://github.com/beautifulSoup/speccoding-template/generate)
-
 **基于 Claude Code + OpenSpec + Superpowers 三件套的全栈 AI 开发模板。**
 
 > 让 AI 稳定交付全栈项目——告别"AI 改崩代码 / 失忆 / 跑偏"。
-
-<div align="center">
-  <img src="https://cdn.jsdelivr.net/gh/beautifulSoup/speccoding-template@main/docs/wechat-qr.jpg" width="180" alt="微信公众号二维码" />
-  <br>
-  <sub>📣 扫码关注公众号 <b>TangoAI实验室</b>，每周更新 AI 开发实战干货</sub>
-</div>
 
 ---
 
@@ -67,7 +55,7 @@
 | M | 单模块新行为或一个公开接口变化 | 标准 OpenSpec：proposal / design / specs / tasks |
 | L | 跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险 | 先架构讨论；`design.md` 必须写取舍与回滚 |
 
-可复制样例在 `examples/`。归档前运行：
+可复制样例在 `examples/`。归档前运行统一检查：
 
 ```powershell
 .\validation\validate-template.cmd
@@ -77,9 +65,21 @@
 
 ## UI 设计规范：只在前端任务加载
 
-`frontend/design.md` 是前端界面的一致性规范。只有任务涉及页面、组件、交互、样式、表单或视觉呈现时才加载；纯后端、数据、部署、脚本任务不用读。
+`frontend/design.md` 是前端界面的一致性规范，按 DESIGN.md 风格组织。只有任务涉及页面、组件、交互、样式、表单或视觉呈现时才加载；纯后端、数据、部署、脚本任务不用读。
 
-它约束六件事：复用既有模式、使用统一 token、稳定布局、覆盖状态、可访问性、用户文案。UI 变更的 `tasks.md` 必须包含 `## UI Check`，可从 `examples/standard-ui-change/tasks.md` 复制。
+它包含九个部分：
+
+1. Visual Theme & Atmosphere
+2. Color Palette & Roles
+3. Typography Rules
+4. Component Stylings
+5. Layout Principles
+6. Depth & Elevation
+7. Do's and Don'ts
+8. Responsive Behavior
+9. Agent Prompt Guide
+
+UI 变更的 `tasks.md` 必须包含 `## UI Check`，可从 `examples/standard-ui-change/tasks.md` 复制。
 
 ---
 
@@ -92,7 +92,7 @@
 **方式 B：Clone 后去掉历史**
 
 ```bash
-git clone https://github.com/beautifulSoup/speccoding-template.git my-project
+git clone https://github.com/chencore/speccoding-template my-project
 cd my-project
 rm -rf .git
 git init && git add -A && git commit -m "chore: bootstrap from SpecCoding template"
@@ -137,6 +137,101 @@ AI 会按 CLAUDE.md 里的「维护节奏」执行：
 ### 4. 单任务开发循环（Phase 1~N）
 
 版本分支下每个 task 走一次完整七阶段工作流。**feature 分支从当前所在分支拉出**（通常是版本分支），合并时回到**它被拉出时的那条分支**——所以创建时必须显式记下父分支：
+
+#### 4.1 先判断复杂度
+
+创建 OpenSpec 变更后，先按 `spec/hardness.md` 选择复杂度等级。等级决定流程轻重：
+
+| 等级 | 典型场景 | 怎么操作 |
+|------|----------|----------|
+| S | 文档、测试、本地修复、单模块小改动、不新增契约 | 轻流程：可以只写 `tasks.md`，但必须包含 `Hardness Check`；如果涉及 UI，再加 `UI Check` |
+| M | 单模块新行为、一个公开接口变化、普通页面/组件 | 标准流程：写 proposal / design / specs / tasks，再 plan / execute / archive |
+| L | 跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险、跨页面 UI 流程 | 先讨论架构或 UI 方案；`design.md` 必须写取舍、边界、失败处理和回滚，再继续执行 |
+
+不确定时按更高等级处理。
+
+#### 4.2 S 级：轻流程
+
+适合小改动，但仍要保留可审计记录：
+
+```bash
+parent=$(git rev-parse --abbrev-ref HEAD)
+git checkout -b feature/fix-small-thing
+git config branch.feature/fix-small-thing.parent "$parent"
+
+openspec-cn new change "fix-small-thing"
+```
+
+然后只补最小必要产出物：
+
+- `openspec/changes/fix-small-thing/tasks.md`
+- 必须包含 `## Hardness Check`
+- 如果是前端界面小改动，先读 `frontend/design.md`，并加 `## UI Check`
+
+随后直接执行、验证、归档：
+
+```bash
+/superpowers:executing-plans
+.\validation\validate-template.cmd
+/opsx:archive
+```
+
+#### 4.3 M 级：标准流程
+
+这是默认路径，适合大多数业务功能：
+
+```bash
+parent=$(git rev-parse --abbrev-ref HEAD)
+git checkout -b feature/add-user-auth
+git config branch.feature/add-user-auth.parent "$parent"
+
+openspec-cn new change "add-user-auth"
+/superpowers:brainstorming
+/superpowers:writing-plans
+/superpowers:executing-plans
+.\validation\validate-template.cmd
+/opsx:archive
+```
+
+要求：
+
+- `proposal.md` 说明做什么和为什么
+- `design.md` 说明怎么做、边界和取舍
+- `specs/<feature>/spec.md` 写场景式规格
+- `tasks.md` 包含 `Hardness Check`
+- UI 变更额外读取 `frontend/design.md` 并包含 `UI Check`
+
+#### 4.4 L 级：先架构讨论
+
+只要命中跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险，或跨页面 UI 流程，就不要直接进入执行。
+
+先做：
+
+```bash
+openspec-cn new change "<name>"
+/superpowers:brainstorming
+```
+
+在 `openspec/changes/<name>/design.md` 里写清：
+
+- 模块边界和跨模块交互
+- 新增依赖或数据模型变化
+- 失败模式、超时、重试、幂等
+- 发布、灰度、回滚路径
+- 如果是 UI：复用/新增的页面模式、响应式策略、截图验证方式
+
+确认方案后再进入：
+
+```bash
+/superpowers:writing-plans
+/superpowers:executing-plans
+.\validation\validate-template.cmd
+/opsx:archive
+```
+
+L 级变更如果实现过程中发现方案不成立，停下来更新 `design.md`，不要在代码里静默偏离。
+
+#### 4.5 通用命令示例
 
 ```bash
 # 1. 创建特性分支 + 显式记录父分支
@@ -288,11 +383,49 @@ openspec/changes/add-user-auth/
 
 这不是重流程，而是归档前的最低生产线。可从 `examples/standard-change/tasks.md` 复制。
 
+### 6. UI Check 只在前端界面变更中存在
+
+如果变更涉及页面、组件、交互、样式、表单或前端视觉，`openspec/changes/<name>/tasks.md` 还必须包含：
+
+```markdown
+## UI Check
+
+- [ ] UI complexity level selected: S / M / L
+- [ ] Existing pattern/component is reused, or new pattern is documented
+- [ ] Visual values use tokens or established style variables
+- [ ] Required states are covered: loading / empty / error / disabled
+- [ ] Keyboard access and accessible names are handled
+- [ ] Screenshot or visual verification is provided, or not applicable with reason
+```
+
+纯后端、数据、部署、脚本、普通文档任务不要添加 UI Check，也不要加载 `frontend/design.md`。
+
+### 7. 归档前统一验证
+
+归档前运行：
+
+```powershell
+.\validation\validate-template.cmd
+```
+
+该命令会依次执行：
+
+- `validate-hardness.cmd`：检查 active OpenSpec change 是否包含 Hardness Check
+- `validate-ui.cmd`：仅对 active UI change 检查 UI Check，并确认 `frontend/design.md` 存在
+
 ---
 
-## 示例变更：照着抄就行
+## 样例：照着抄就行
 
-`openspec/changes/archive/example-add-user-auth/` 里存了一个**完整的示例变更**，包含：
+`examples/` 提供 Agent 可复制的最小样例：
+
+- `examples/standard-change/tasks.md` — 通用变更任务模板，包含 Hardness Check
+- `examples/standard-change/design.md` — M/L 变更的轻量设计模板
+- `examples/standard-ui-change/tasks.md` — UI 变更任务模板，包含 UI Check + Hardness Check
+- `examples/standard-ui-change/design.md` — UI 变更设计模板
+- `examples/standard-module/README.md` — 模块边界样例
+
+`openspec/changes/archive/example-add-user-auth/` 里还存了一个完整示例变更：
 
 - `proposal.md` — 变更提案
 - `design.md` — 技术方案
