@@ -435,6 +435,105 @@ git branch -d feature/add-user-auth
 
 ---
 
+## 已有项目迁移到本工作流
+
+如果是已有的大型项目，**不需要整体重构或迁移业务代码**，把这套工作流作为"增量治理层"叠加进去即可。
+
+### 迁移原则
+
+| 不要这样做 | 要这样做 |
+|-----------|---------|
+| 把老代码按模板目录重新摆放 | 在仓库根目录补工作流骨架 |
+| 给所有历史功能补 OpenSpec | 只对新变更走 OpenSpec 流程 |
+| 要求老代码立即满足 Hardness 全部条款 | 让每个新变更自带 Hardness Check |
+| 强制替换现有分支策略 | 把 `version/v*` + `feature/*` 映射到现有流程 |
+
+### 第一步：叠加工作流骨架
+
+在仓库根目录新增这些文件/目录（不改动现有业务代码）：
+
+```text
+spec/
+  requirements.md   # 累积式整体需求
+  design.md         # 现有架构兜底说明
+  tasks.md          # 按版本分块的任务清单
+  hardness.md       # 生产级底线（直接复制模板）
+  devlog.md         # 开发日志
+  structure.md      # 目录结构说明
+openspec/
+  changes/          # 单次变更产出物
+examples/           # 标准样例
+validation/         # 归档前验证脚本
+CLAUDE.md           # 项目协作约定
+AGENTS.md           # Agent 规则
+```
+
+### 第二步：把现状写进项目级 spec
+
+第一次只做"让 AI 读懂项目"，不改代码：
+
+- `spec/structure.md`：列出已有顶层目录、模块职责、关键入口
+- `spec/design.md`：用现有系统的语言写清**当前架构**（模块边界、数据流、外部依赖），不是设计新架构
+- `spec/requirements.md`：把已上线/已确认的核心需求用 `[v0.0 基线]` 标签归档，作为后续变更的基准
+- `spec/hardness.md`：直接复制模板，作为所有新变更的默认底线
+
+### 第三步：从下一个变更开始走 OpenSpec
+
+老代码保持原样，所有**新需求、重构、bugfix**都按七阶段工作流执行：
+
+```bash
+parent=$(git rev-parse --abbrev-ref HEAD)
+git checkout -b feature/<name>
+git config branch.feature/<name>.parent "$parent"
+
+openspec-cn new change "<name>"
+/superpowers:brainstorming
+/superpowers:writing-plans
+/superpowers:executing-plans
+.\validation\validate-template.cmd
+/opsx:archive
+```
+
+### 第四步：按项目现状裁剪分支模型
+
+| 现有流程 | 映射方式 |
+|---------|---------|
+| 已有 release 分支 | 把 `version/v*` 当作 release 分支使用 |
+| 直接从 main 发版 | feature 从 main 拉出，合回 main |
+| 使用 Jira/TAPD 等版本概念 | 每个版本对应一个 `version/v<semver>` 分支 |
+
+关键规则保留：每个 feature 分支必须显式记录父分支：
+
+```bash
+git config branch.feature/<name>.parent <parent>
+```
+
+### 第五步：复杂度自适应
+
+大型项目里不要所有变更都走全套：
+
+| 等级 | 用法 |
+|------|------|
+| S | 文档、单测、局部修复：只写 `tasks.md` + `Hardness Check` |
+| M | 单模块接口/行为变更：标准 OpenSpec 五件套 |
+| L | 跨模块、数据模型、新依赖、安全鉴权：先架构讨论，`design.md` 必须写取舍与回滚 |
+
+### 第六步：把 Hardness 当作变更门槛
+
+不要求老代码全部满足 `spec/hardness.md`，但**每个新变更的 `tasks.md` 必须包含 `## Hardness Check`**，覆盖边界、失败处理、验证、可观测性、回滚。老代码会随着每次变更被侵蚀式改进。
+
+### 大型项目额外注意点
+
+- **spec 可以按域拆分**：如果项目很大，可以在 `spec/` 下按业务域再分，比如 `spec/core/`、`spec/billing/`，但变更级产出仍集中在 `openspec/changes/<name>/`
+- **openspec 变更粒度要小**：一个变更只交付一个可验证行为，不要把大重构塞成一个变更
+- **先跑通一个最小变更**：先用一个真实的 S/M 级需求走完整流，验证分支策略、CI、归档脚本都能跑通，再推广到团队
+
+### 一句话总结
+
+**老代码不动，新变更听话**——把 `spec/`、`openspec/`、分支规则、`Hardness Check` 嫁接到现有仓库，让增量开发按这个流程走，老系统自然逐步被规范覆盖。
+
+---
+
 ## 目录结构
 
 ```
