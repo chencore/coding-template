@@ -1,0 +1,11 @@
+{
+  "name": "speccoding-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "node --test backend/*.test.js",
+    "validate": "validation\\validate-template.cmd"
+  }
+}

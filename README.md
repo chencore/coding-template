@@ -37,6 +37,85 @@
 
 ---
 
+## OpenSpec 与 Superpowers 的区别
+
+OpenSpec 和 Superpowers 不是同一类工具，它们在本模板里负责两件不同的事：
+
+| 工具 | 负责什么 | 产出在哪里 | 本质 |
+|------|----------|------------|------|
+| **OpenSpec** | 管理单次变更的规格、任务、状态和归档 | `openspec/changes/<name>/` | 磁盘上的变更记录系统 |
+| **Superpowers** | 约束 AI 在某个阶段的工作方式 | 对应阶段生成或修改 OpenSpec 产物 / 代码 | AI 工作姿态和执行方法 |
+
+### OpenSpec：变更的“事实账本”
+
+OpenSpec 回答的是：
+
+- 这次变更叫什么？
+- 为什么要做？
+- 要改哪些行为？
+- 设计方案是什么？
+- 任务拆成哪些步骤？
+- 哪些任务完成了？
+- 变更最终归档到哪里？
+
+在本模板中，每个需求级变更都落在：
+
+```text
+openspec/changes/<change-name>/
+├── proposal.md
+├── design.md
+├── specs/<feature>/spec.md
+├── plan.md
+└── tasks.md
+```
+
+这些文件是 AI 失忆后的恢复点，也是团队审计、回滚、复盘的依据。换句话说，OpenSpec 不负责“怎么思考”，它负责把思考结果和执行状态稳定地写到磁盘。
+
+### Superpowers：AI 的“阶段姿态”
+
+Superpowers 回答的是：
+
+- 现在应该探索，还是计划，还是执行？
+- AI 能不能直接写代码？
+- 什么时候应该多问？
+- 什么时候应该按计划自主推进？
+- 当前阶段应该产出什么？
+
+在本模板中常用三种姿态：
+
+| 阶段 | Superpowers | AI 应该做什么 | 不应该做什么 |
+|------|-------------|---------------|--------------|
+| 设计 | `/superpowers:brainstorming` | 澄清需求、比较方案、写 proposal/design/specs | 不直接写业务代码 |
+| 计划 | `/superpowers:writing-plans` | 把设计拆成可执行计划，写 `plan.md` | 不直接写业务代码 |
+| 执行 | `/superpowers:executing-plans` | 严格按 `plan.md` 实现、测试、更新任务状态 | 不静默偏离计划 |
+
+Superpowers 更像“驾驶模式”：同一个 AI，在 brainstorming 时要多问和权衡，在 executing-plans 时要少问并推进到底。
+
+### 两者如何配合
+
+完整关系是：
+
+```text
+OpenSpec 创建变更目录
+        ↓
+Superpowers brainstorming 生成 proposal / design / specs
+        ↓
+Superpowers writing-plans 生成 plan.md
+        ↓
+Superpowers executing-plans 按 plan.md 写代码并更新 tasks.md
+        ↓
+OpenSpec archive 归档完整变更记录
+```
+
+一句话：
+
+- **OpenSpec 管“变更产物和生命周期”**
+- **Superpowers 管“AI 在每个阶段怎么工作”**
+
+如果没有 OpenSpec，AI 的思考和执行容易散落在聊天上下文里；如果没有 Superpowers，AI 容易在还没想清楚时直接写代码，或在执行阶段反复回到讨论。
+
+---
+
 ## Hardness：少而硬的生产级底线
 
 `spec/hardness.md` 是所有变更默认遵守的 constitution。它只保留五条底线：
@@ -111,7 +190,84 @@ npm install -g @anthropic-ai/claude-code
 # 安装方式详见 Superpowers 项目文档
 ```
 
-### 3. 版本 kickoff（Phase 0）
+### 3. 运行最小纵切样例
+
+模板内置一个无外部依赖的最小可运行纵切，用来验证“前端界面 → 后端 API → 领域逻辑 → 测试 → 模板校验”这条链路。
+
+#### 3.1 样例目录结构
+
+```text
+.
+├── package.json
+├── backend/
+│   ├── server.js       # Node HTTP server：静态前端 + API
+│   ├── tasks.js        # 任务领域逻辑
+│   └── tasks.test.js   # Node 内置测试
+└── frontend/
+    ├── index.html      # 页面入口
+    ├── app.js          # 前端交互和 API 调用
+    ├── styles.css      # 样例样式，遵守 frontend/design.md
+    └── design.md       # UI 设计规范，仅前端界面任务加载
+```
+
+接口和页面：
+
+- 页面入口：`GET /`
+- 健康检查：`GET /api/health`
+- 任务列表：`GET /api/tasks`
+- 创建任务：`POST /api/tasks`
+- 切换状态：`POST /api/tasks/:id/toggle`
+
+#### 3.2 编译 / 安装
+
+当前样例只使用 Node.js 内置模块，没有第三方依赖，不需要 `npm install`，也没有构建步骤。
+
+要求：
+
+- Node.js 18+（需要内置 `node:test` 和 `fetch`）
+
+#### 3.3 测试与模板验证
+
+```bash
+npm test
+npm run validate
+```
+
+其中：
+
+- `npm test`：运行 `backend/tasks.test.js`
+- `npm run validate`：运行 `validation/validate-template.cmd`，检查 Hardness / UI 规则
+
+#### 3.4 启动运行
+
+```bash
+npm start
+```
+
+如果 PowerShell 提示 `npm.ps1` 被执行策略禁止，改用：
+
+```powershell
+npm.cmd test
+npm.cmd run validate
+npm.cmd start
+```
+
+启动后打开：
+
+```text
+http://localhost:3000
+```
+
+也可以直接检查 API：
+
+```powershell
+Invoke-RestMethod http://localhost:3000/api/health
+Invoke-RestMethod http://localhost:3000/api/tasks
+```
+
+这个样例只用于证明模板流程可跑通，不规定你真实项目必须使用 Node 或这个目录结构。
+
+### 4. 版本 kickoff（Phase 0）
 
 每个版本启动一次。**先开版本分支，再让 AI 进入讨论阶段**——不要让 AI 一上来就动 spec 文件。
 
@@ -134,11 +290,11 @@ AI 会按 CLAUDE.md 里的「维护节奏」执行：
 
 > 💡 在 `main` 等非版本分支上触发 kickoff 时，AI 会降级为"无版本"模式（用日期作标签）。完整规则见 `CLAUDE.md` 的「维护节奏 → ① 版本 kickoff」。
 
-### 4. 单任务开发循环（Phase 1~N）
+### 5. 单任务开发循环（Phase 1~N）
 
 版本分支下每个 task 走一次完整七阶段工作流。**feature 分支从当前所在分支拉出**（通常是版本分支），合并时回到**它被拉出时的那条分支**——所以创建时必须显式记下父分支：
 
-#### 4.1 先判断复杂度
+#### 5.1 先判断复杂度
 
 创建 OpenSpec 变更后，先按 `spec/hardness.md` 选择复杂度等级。等级决定流程轻重：
 
@@ -150,7 +306,7 @@ AI 会按 CLAUDE.md 里的「维护节奏」执行：
 
 不确定时按更高等级处理。
 
-#### 4.2 S 级：轻流程
+#### 5.2 S 级：轻流程
 
 适合小改动，但仍要保留可审计记录：
 
@@ -176,7 +332,7 @@ openspec-cn new change "fix-small-thing"
 /opsx:archive
 ```
 
-#### 4.3 M 级：标准流程
+#### 5.3 M 级：标准流程
 
 这是默认路径，适合大多数业务功能：
 
@@ -201,7 +357,7 @@ openspec-cn new change "add-user-auth"
 - `tasks.md` 包含 `Hardness Check`
 - UI 变更额外读取 `frontend/design.md` 并包含 `UI Check`
 
-#### 4.4 L 级：先架构讨论
+#### 5.4 L 级：先架构讨论
 
 只要命中跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险，或跨页面 UI 流程，就不要直接进入执行。
 
@@ -231,7 +387,7 @@ openspec-cn new change "<name>"
 
 L 级变更如果实现过程中发现方案不成立，停下来更新 `design.md`，不要在代码里静默偏离。
 
-#### 4.5 通用命令示例
+#### 5.5 通用命令示例
 
 ```bash
 # 1. 创建特性分支 + 显式记录父分支
@@ -310,8 +466,14 @@ git branch -d feature/add-user-auth
 │
 ├── .codebuddy/            # CodeBuddy 配置（若使用 CodeBuddy 国际版）
 │
-├── backend/               # 后端代码（待填）
-├── frontend/              # 前端代码（待填）
+├── backend/               # 最小纵切后端样例
+│   ├── server.js          # Node HTTP server + API
+│   ├── tasks.js           # 任务领域逻辑
+│   └── tasks.test.js      # 单元测试
+├── frontend/              # 最小纵切前端样例
+│   ├── index.html         # 页面入口
+│   ├── app.js             # 前端交互
+│   ├── styles.css         # 样例样式
 │   └── design.md          # UI 设计规范（仅前端界面任务加载）
 └── prototype/             # 原型设计（待填）
 ```
