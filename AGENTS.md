@@ -1,10 +1,10 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## 项目概览
 
-这是一个 **SpecCoding 全栈开发模板**，基于 Claude Code + OpenSpec + Superpowers 三件套工作流。
+这是一个 **SpecCoding 全栈开发模板**，基于 Codex + OpenSpec + Superpowers 三件套工作流。
 
 - `backend/` — 后端服务（技术栈自选）
 - `frontend/` — 前端（Web / H5 / App 皆可）
@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. 实际情况与已确认方案出现冲突（方案里没覆盖的关键分叉）
 2. 不可逆 / 高破坏性操作（`git push --force`、`git reset --hard`、删共享分支、改 `main`、改外部状态）
 3. 反复尝试同一思路仍失败，需要换方向
-4. CLAUDE.md / spec 明确要求人工确认的节点（如 openspec 归档时的 design 提升、版本分支推送远程等）
+4. AGENTS.md / spec 明确要求人工确认的节点（如 openspec 归档时的 design 提升、版本分支推送远程等）
 
 **一句话**：设计前多问，执行中少问。
 

@@ -1,20 +1,16 @@
 schema: spec-driven
 
-# 项目上下文（可选）
-# 在创建工件时向 AI 显示此信息。
-# 添加您的技术栈、约定、风格指南、领域知识等。
-# 示例：
-#   context: |
-#     技术栈：TypeScript, React, Node.js
-#     我们使用约定式提交
-#     领域：电商平台
+context: |
+  本仓库使用轻量 Hardness 规范约束 AI 产出。
+  每个变更默认遵守 spec/hardness.md。
+  复杂度分为 S / M / L：小改动走轻流程，大变更先做架构讨论。
+  可复制样例位于 examples/，归档前运行 validation/validate-hardness.cmd。
 
-# 每个工件的规则（可选）
-# 为特定工件添加自定义规则。
-# 示例：
-#   rules:
-#     proposal:
-#       - 保持提案在500字以内
-#       - 始终包含"非目标"部分
-#     tasks:
-#       - 将任务分解为最多2小时的块
+rules:
+  design:
+    - 对 M/L 级变更，必须说明复杂度等级、模块边界、关键取舍、失败处理与回滚路径。
+    - S 级变更可以省略 design.md，但 tasks.md 仍必须包含 Hardness Check。
+  tasks:
+    - 必须包含 spec/hardness.md 中定义的 "## Hardness Check" 区块。
+    - 必须选择复杂度等级 S / M / L。
+    - 不要用大量 checklist 稀释重点，只保留边界、失败、验证、可观测性、回滚五类底线。

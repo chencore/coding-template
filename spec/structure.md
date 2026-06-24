@@ -9,6 +9,7 @@
 │   ├── requirements.md  # 整体需求
 │   ├── design.md        # 整体设计
 │   ├── tasks.md         # 里程碑级任务清单
+│   ├── hardness.md      # 生产级代码底线
 │   ├── devlog.md        # 开发日志
 │   └── structure.md     # 项目结构（本文件）
 ├── openspec/            # OpenSpec 管理的需求级 spec
@@ -16,6 +17,8 @@
 │   ├── changes/         # 变更记录
 │   │   └── archive/     # 已归档的变更
 │   └── specs/           # 从变更提炼的长期规格
+├── examples/            # Agent 可复制的标准样例
+├── validation/          # 轻量验证脚本
 ├── docs/                # 文档资源（README 引用的图片/二维码等）
 ├── .claude/             # Claude Code 配置与技能
 ├── .codebuddy/          # CodeBuddy 配置（可选）

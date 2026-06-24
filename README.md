@@ -26,6 +26,9 @@
 - ✅ **两级分支模型**：`version/v*` 承载一批需求，`feature/*` 隔离单次变更
 - ✅ **七阶段工作流**：`git branch → scaffold → brainstorm → plan → execute → archive → merge`
 - ✅ **协作姿态明确**：方案制定多问 / 列 tradeoff，执行落地尽量自主推进
+- ✅ **Hardness 宪法**：用 5 条生产级底线约束所有变更，不堆重流程
+- ✅ **复杂度自适应**：S/M/L 分级，小改动轻流程，大变更先架构讨论
+- ✅ **样例 + 验证**：`examples/` 给 AI 可复制形状，`validation/` 给归档前检查
 - ✅ **三工具协同**：Claude Code 执行、OpenSpec 规格、Superpowers 流程
 - ✅ **全栈骨架**：预留 backend / frontend / prototype 目录
 - ✅ **示例变更**：`openspec/changes/archive/` 里附一个完整示例，可直接照抄
@@ -42,6 +45,32 @@
 执行阶段只在四种情况下停下来请示：方案与实际冲突、不可逆操作（如 `git push --force` / 改 `main`）、反复尝试同一思路失败、CLAUDE.md 明确要求人工确认的节点（如归档时的 design 提升）。详见 `CLAUDE.md`。
 
 **一句话**：设计前多问，执行中少问。
+
+---
+
+## Hardness：少而硬的生产级底线
+
+`spec/hardness.md` 是所有变更默认遵守的 constitution。它只保留五条底线：
+
+1. **Boundary**：说清改哪个模块，不跨模块偷调内部实现
+2. **Failure**：错误、超时、重试 / 不可重试有处理
+3. **Verification**：核心路径有测试，bugfix 有回归验证
+4. **Observability**：关键行为可排查，日志不泄露敏感信息
+5. **Rollback**：涉及数据 / 配置 / 发布 / 外部依赖时说明回滚
+
+每个变更先选复杂度：
+
+| 等级 | 适用场景 | 流程 |
+|------|----------|------|
+| S | 文档、测试、本地修复、单模块小改动 | 轻流程：`tasks.md` 有 Hardness Check；`design.md` 可选 |
+| M | 单模块新行为或一个公开接口变化 | 标准 OpenSpec：proposal / design / specs / tasks |
+| L | 跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险 | 先架构讨论；`design.md` 必须写取舍与回滚 |
+
+可复制样例在 `examples/`。归档前运行：
+
+```powershell
+.\validation\validate-hardness.cmd
+```
 
 ---
 
@@ -123,6 +152,7 @@ openspec-cn new change "add-user-auth"
 # → 严格按 openspec/changes/add-user-auth/plan.md 执行
 
 # 6. 归档（在合并回父分支前完成）
+.\validation\validate-hardness.cmd
 /opsx:archive
 # → 整个 add-user-auth/ 目录移入 openspec/changes/archive/
 # → AI 会扫 design.md，若含跨模块影响 / 新依赖 / 数据模型变更，
@@ -157,6 +187,7 @@ git branch -d feature/add-user-auth
 │   ├── requirements.md    #   整体需求
 │   ├── design.md          #   整体架构与设计
 │   ├── tasks.md           #   里程碑级任务清单
+│   ├── hardness.md        #   生产级代码底线
 │   ├── devlog.md          #   开发日志（AI 自动维护）
 │   └── structure.md       #   目录结构说明
 │
@@ -165,6 +196,9 @@ git branch -d feature/add-user-auth
 │   ├── changes/
 │   │   └── archive/       #   已完成的变更归档（附示例）
 │   └── specs/             #   单独提炼的长期规格
+│
+├── examples/              # Agent 可复制的标准样例
+├── validation/            # 轻量验证脚本
 │
 ├── .claude/               # Claude Code 配置、命令与技能
 │   ├── commands/opsx/     #   /opsx:apply /opsx:archive 等斜杠命令
@@ -226,6 +260,23 @@ openspec/changes/add-user-auth/
 ```
 
 不要让 `plan.md` 散落到仓库根、`docs/`、`.claude/` 或任何其他位置——**归档 / 审计 / 回滚**都依赖这个归一原则。
+
+### 5. Hardness Check 必须存在
+
+每个 `openspec/changes/<name>/tasks.md` 必须包含：
+
+```markdown
+## Hardness Check
+
+- [ ] Complexity level selected: S / M / L
+- [ ] Boundary is clear; no cross-module internal access
+- [ ] Failure behavior is handled or explicitly not applicable
+- [ ] Core path and important failure path are verified
+- [ ] Logs/metrics cover important behavior without leaking sensitive data
+- [ ] Rollback path is documented, or not applicable with reason
+```
+
+这不是重流程，而是归档前的最低生产线。可从 `examples/standard-change/tasks.md` 复制。
 
 ---
 
