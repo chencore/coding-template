@@ -3,8 +3,9 @@ schema: spec-driven
 context: |
   本仓库使用轻量 Hardness 规范约束 AI 产出。
   每个变更默认遵守 spec/hardness.md。
+  前端界面变更才加载并遵守 frontend/design.md。
   复杂度分为 S / M / L：小改动走轻流程，大变更先做架构讨论。
-  可复制样例位于 examples/，归档前运行 validation/validate-hardness.cmd。
+  可复制样例位于 examples/，归档前运行 validation/validate-template.cmd。
 
 rules:
   design:
@@ -12,5 +13,7 @@ rules:
     - S 级变更可以省略 design.md，但 tasks.md 仍必须包含 Hardness Check。
   tasks:
     - 必须包含 spec/hardness.md 中定义的 "## Hardness Check" 区块。
+    - 涉及页面、组件、交互、样式、表单或前端视觉时，必须先读取 frontend/design.md，并包含其中定义的 "## UI Check" 区块。
     - 必须选择复杂度等级 S / M / L。
     - 不要用大量 checklist 稀释重点，只保留边界、失败、验证、可观测性、回滚五类底线。
+    - UI checklist 只在 UI 变更中使用，纯后端变更不要添加。

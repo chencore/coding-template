@@ -19,7 +19,7 @@ git branch → openspec scaffold → brainstorming → writing-plans → executi
 | 3. 设计 | `/superpowers:brainstorming` | 探索设计，产出写入 `openspec/changes/<name>/`（proposal.md、design.md、specs/、tasks.md） |
 | 4. 制定计划 | `/superpowers:writing-plans` | **产出的 plan.md 必须写入 `openspec/changes/<name>/plan.md`**，与同变更的其他产出物放在同一目录，**不要**散落到仓库根或其他位置 |
 | 5. 执行 | `/superpowers:executing-plans` | 严格按 `openspec/changes/<name>/plan.md` 执行代码变更 |
-| 6. 归档 | `/opsx:archive` | 先运行 `.\validation\validate-hardness.cmd`，再移入 `openspec/changes/archive/` |
+| 6. 归档 | `/opsx:archive` | 先运行 `.\validation\validate-template.cmd`，再移入 `openspec/changes/archive/` |
 | 7. 合并代码 | `git merge feature/<name>` | 合并回主分支，删除特性分支 |
 
 ## OpenSpec 变更管理
@@ -33,6 +33,7 @@ git branch → openspec scaffold → brainstorming → writing-plans → executi
 - `tasks.md` — 实现任务清单（checkable）
 
 `tasks.md` 必须包含 `## Hardness Check`，格式参考 `examples/standard-change/tasks.md`。
+前端界面变更还必须包含 `## UI Check`，格式参考 `examples/standard-ui-change/tasks.md`。
 
 相关命令：
 - `openspec-cn new change "<name>"` — 创建变更目录

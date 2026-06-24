@@ -7,7 +7,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 这是一个 **SpecCoding 全栈开发模板**，基于 Codex + OpenSpec + Superpowers 三件套工作流。
 
 - `backend/` — 后端服务（技术栈自选）
-- `frontend/` — 前端（Web / H5 / App 皆可）
+- `frontend/` — 前端（Web / H5 / App 皆可）；`frontend/design.md` 仅在前端界面任务加载
 - `prototype/` — 原型设计稿
 - `spec/` — **项目级** spec 文档（整体需求/设计/结构/进度）
 - `openspec/` — **需求级** spec 文档（由 OpenSpec 管理的单个变更）
@@ -49,8 +49,14 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 每个 `openspec/changes/<name>/tasks.md` 必须包含 `## Hardness Check`，格式参考 `examples/standard-change/tasks.md`。归档前运行：
 
 ```powershell
-.\validation\validate-hardness.cmd
+.\validation\validate-template.cmd
 ```
+
+## UI 设计规范：仅前端界面任务加载
+
+`frontend/design.md` 存放视觉和交互一致性规范。只有任务涉及页面、组件、交互、样式、表单或前端视觉时才读取它；纯后端、数据、部署、脚本、文档任务不要加载。
+
+前端界面变更必须在 `openspec/changes/<name>/tasks.md` 包含 `## UI Check`，格式参考 `examples/standard-ui-change/tasks.md`。
 
 ### 复杂度自适应
 
@@ -168,7 +174,7 @@ git config branch.feature/<name>.parent "$parent"
 | 3. 设计 | `/superpowers:brainstorming` | 探索设计，产出写入 `openspec/changes/<name>/`（proposal.md、design.md、specs/、tasks.md） |
 | 4. 制定计划 | `/superpowers:writing-plans` | **产出的 plan.md 必须写入 `openspec/changes/<name>/plan.md`**，与同变更的 proposal / design / specs / tasks 放在同一目录下，**不要**散落到仓库根或其他位置 |
 | 5. 执行 | `/superpowers:executing-plans` | 严格按 `openspec/changes/<name>/plan.md` 执行代码变更 |
-| 6. 归档 | `/opsx:archive` | 先运行 `.\validation\validate-hardness.cmd`，再移入 `openspec/changes/archive/`（在合并回父分支前完成） |
+| 6. 归档 | `/opsx:archive` | 先运行 `.\validation\validate-template.cmd`，再移入 `openspec/changes/archive/`（在合并回父分支前完成） |
 | 7. 合并代码 | 读 `git config --get branch.<current>.parent` → `git merge` 回该父分支 → 按上文「维护节奏」规则追加 `devlog.md`（注明父分支名） | 合并目标是**父分支**，不一定是 `main`；删除特性分支 |
 
 ## OpenSpec 变更管理

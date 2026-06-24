@@ -27,6 +27,7 @@
 - ✅ **七阶段工作流**：`git branch → scaffold → brainstorm → plan → execute → archive → merge`
 - ✅ **协作姿态明确**：方案制定多问 / 列 tradeoff，执行落地尽量自主推进
 - ✅ **Hardness 宪法**：用 5 条生产级底线约束所有变更，不堆重流程
+- ✅ **UI 设计规范**：`frontend/design.md` 只在前端界面任务加载，保证界面一致性
 - ✅ **复杂度自适应**：S/M/L 分级，小改动轻流程，大变更先架构讨论
 - ✅ **样例 + 验证**：`examples/` 给 AI 可复制形状，`validation/` 给归档前检查
 - ✅ **三工具协同**：Claude Code 执行、OpenSpec 规格、Superpowers 流程
@@ -69,8 +70,16 @@
 可复制样例在 `examples/`。归档前运行：
 
 ```powershell
-.\validation\validate-hardness.cmd
+.\validation\validate-template.cmd
 ```
+
+---
+
+## UI 设计规范：只在前端任务加载
+
+`frontend/design.md` 是前端界面的一致性规范。只有任务涉及页面、组件、交互、样式、表单或视觉呈现时才加载；纯后端、数据、部署、脚本任务不用读。
+
+它约束六件事：复用既有模式、使用统一 token、稳定布局、覆盖状态、可访问性、用户文案。UI 变更的 `tasks.md` 必须包含 `## UI Check`，可从 `examples/standard-ui-change/tasks.md` 复制。
 
 ---
 
@@ -152,7 +161,7 @@ openspec-cn new change "add-user-auth"
 # → 严格按 openspec/changes/add-user-auth/plan.md 执行
 
 # 6. 归档（在合并回父分支前完成）
-.\validation\validate-hardness.cmd
+.\validation\validate-template.cmd
 /opsx:archive
 # → 整个 add-user-auth/ 目录移入 openspec/changes/archive/
 # → AI 会扫 design.md，若含跨模块影响 / 新依赖 / 数据模型变更，
@@ -208,6 +217,7 @@ git branch -d feature/add-user-auth
 │
 ├── backend/               # 后端代码（待填）
 ├── frontend/              # 前端代码（待填）
+│   └── design.md          # UI 设计规范（仅前端界面任务加载）
 └── prototype/             # 原型设计（待填）
 ```
 

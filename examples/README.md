@@ -6,6 +6,8 @@ These examples are copy targets for agents. They are intentionally small: copy t
 
 - `standard-change/tasks.md` - minimal OpenSpec task file with the required Hardness Check.
 - `standard-change/design.md` - compact design shape for M/L changes.
+- `standard-ui-change/tasks.md` - UI OpenSpec task file with UI Check and Hardness Check.
+- `standard-ui-change/design.md` - compact UI design shape for M/L UI changes.
 - `standard-module/README.md` - a lightweight module contract example.
 
 ## Rule

@@ -4,6 +4,7 @@
 <project-root>/
 ├── backend/             # 后端代码
 ├── frontend/            # 前端代码
+│   └── design.md        # UI 设计规范（仅前端界面任务加载）
 ├── prototype/           # 原型设计
 ├── spec/                # 项目级 spec 文档
 │   ├── requirements.md  # 整体需求

@@ -37,4 +37,8 @@ provider:
 - M：单模块新行为或一个公开接口变化，走标准 OpenSpec
 - L：跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险，先架构讨论
 
-归档前运行 `.\validation\validate-hardness.cmd`。
+归档前运行 `.\validation\validate-template.cmd`。
+
+## UI 设计规范
+
+`frontend/design.md` 仅在前端界面任务加载。任务涉及页面、组件、交互、样式、表单或前端视觉时，先读取该文件，并在 `tasks.md` 中包含 `## UI Check`。
