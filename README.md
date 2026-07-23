@@ -12,7 +12,7 @@
 
 - ✅ **两级 Spec 体系**：`spec/` 管项目全局，`openspec/` 管单次变更
 - ✅ **两级分支模型**：`version/v*` 承载一批需求，`feature/*` 隔离单次变更
-- ✅ **七阶段工作流**：`git branch → scaffold → 设计对话 → 任务拆解 → 执行 → 自查归档 → merge`
+- ✅ **七阶段工作流**：`git branch → openspec scaffold → 设计对话 → 任务拆解 → 执行 → 自查归档 → git merge`
 - ✅ **协作姿态明确**：方案制定多问 / 列 tradeoff，执行落地尽量自主推进
 - ✅ **Hardness 宪法**：用 5 条生产级底线约束所有变更，不堆重流程
 - ✅ **UI 设计规范**：`frontend/design.md` 只在前端界面任务加载，保证界面一致性
@@ -190,12 +190,12 @@ npm install -g @anthropic-ai/claude-code
 
 # mattpocock/skills（设计澄清、执行、TDD、调试、自查等技能）
 # 在本项目根目录逐个安装（装到 .claude/skills/，随仓库共享）：
-npx skills@latest add mattpocock/skills/grill-me
-npx skills@latest add mattpocock/skills/implement
-npx skills@latest add mattpocock/skills/tdd
-npx skills@latest add mattpocock/skills/diagnose
-npx skills@latest add mattpocock/skills/code-review
-npx skills@latest add mattpocock/skills/caveman
+npx skills@latest add mattpocock/skills/grill-me      # 设计/需求澄清：AI 反过来追问你
+npx skills@latest add mattpocock/skills/implement     # 执行：按 tasks.md 逐项推进
+npx skills@latest add mattpocock/skills/tdd           # 核心逻辑：红绿重构
+npx skills@latest add mattpocock/skills/diagnose      # 调试：系统化定位 bug 根因
+npx skills@latest add mattpocock/skills/code-review   # 收尾：归档前自查
+npx skills@latest add mattpocock/skills/caveman       # 可选：压缩 AI 输出，执行阶段降噪
 ```
 
 ### 3. 运行最小纵切样例
@@ -335,6 +335,7 @@ openspec-cn new change "fix-small-thing"
 随后直接执行、验证、归档（按 `tasks.md` 逐项推进，可用 `implement` 技能驱动）：
 
 ```bash
+# code-review 自查
 .\validation\validate-template.cmd
 /opsx:archive
 ```

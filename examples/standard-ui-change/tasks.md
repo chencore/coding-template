@@ -1,11 +1,31 @@
 # Tasks: <ui-change-name>
 
-## Implementation
+> 实现任务清单。由「任务拆解」阶段在设计确认后直接编写；执行阶段（`implement`）逐项推进、逐项勾选。
+>
+> 拆解规则与 `examples/standard-change/tasks.md` 相同；UI 变更额外要求：
+> - 动手前已阅读 `frontend/design.md`
+> - 优先复用现有页面/组件模式，新模式需在 design.md 中说明
 
-- [ ] Reuse the closest existing page or component pattern
-- [ ] Implement the UI change with existing tokens/style variables
-- [ ] Cover required states and responsive behavior
-- [ ] Capture screenshot or visual verification notes
+## 1. 组件 / 页面
+
+- [ ] 1.1 <复用的现有模式或组件，注明来源>
+- [ ] 1.2 <实现 UI 变更，使用已有 tokens / 样式变量>
+- [ ] 1.3 <覆盖必备状态：loading / empty / error / disabled>
+
+## 2. 交互与响应式
+
+- [ ] 2.1 <键盘可达性与无障碍命名>
+- [ ] 2.2 <响应式行为验证（断点列表见 frontend/design.md）>
+
+## 3. 视觉验证
+
+- [ ] 3.1 <截图或可视化验证记录，附在变更目录下>
+
+## 4. 收尾
+
+- [ ] 4.1 `spec/tasks.md` 勾选本变更对应 task
+- [ ] 4.2 `spec/devlog.md` 追加变更记录
+- [ ] 4.3 运行 `.\validation\validate-template.cmd` 并 `/opsx:archive` 归档
 
 ## UI Check
 

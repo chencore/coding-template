@@ -1,6 +1,6 @@
 # Tasks: Add User Authentication
 
-> 实现任务清单。由 `/superpowers:writing-plans` 生成，`/superpowers:executing-plans` 逐项执行。
+> 实现任务清单。（历史注：本变更归档于旧流程时期；当前流程的 tasks.md 由任务拆解直接编写，执行阶段逐项勾选。）
 
 ---
 

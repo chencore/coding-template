@@ -1,8 +1,6 @@
 # Plan: Add User Authentication
 
-> 由 `/superpowers:writing-plans` 生成的**详细实现计划**。
->
-> 位置铁律：本文件必须位于 `openspec/changes/<change-name>/plan.md`，与同变更的 proposal / design / specs / tasks 放在一起。**不要**存到仓库根或 `docs/` 等其他位置。
+> ⚠️ **历史产物，请勿照抄**：本文件由旧流程（superpowers writing-plans）生成。当前流程已删除 plan.md 环节——任务拆解直接写入 `tasks.md`，执行阶段（`implement`）对着 `tasks.md` 推进。本文件仅作为历史归档保留。
 
 ---
 
@@ -173,8 +171,8 @@
 
 ---
 
-## 执行中铁律
+## 执行中铁律（旧流程规则，现已失效，仅作历史参考）
 
 1. **每个阶段完成后必须跑"✅ 完成验证"**，全部通过才能进入下一阶段
-2. **plan.md 本身不可被 executing-plans 修改**——只可追加"执行笔记"到 devlog.md
-3. 如发现设计需要调整，**先修 design.md 再改 plan.md**，不可在实现中静默偏离
+2. plan.md 本身在执行阶段不可修改——只可追加"执行笔记"到 devlog.md
+3. 如发现设计需要调整，**先修 design.md 再改 tasks.md**，不可在实现中静默偏离
