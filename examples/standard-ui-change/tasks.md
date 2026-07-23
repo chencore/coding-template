@@ -2,7 +2,7 @@
 
 > 实现任务清单。由「任务拆解」阶段在设计确认后直接编写；执行阶段（`implement`）逐项推进、逐项勾选。
 >
-> 拆解规则与 `examples/standard-change/tasks.md` 相同；UI 变更额外要求：
+> 完整拆解规则见 `CLAUDE.md` 的「任务拆解规则」小节；UI 变更额外要求：
 > - 动手前已阅读 `frontend/design.md`
 > - 优先复用现有页面/组件模式，新模式需在 design.md 中说明
 

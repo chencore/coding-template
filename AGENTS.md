@@ -172,10 +172,23 @@ git config branch.feature/<name>.parent "$parent"
 | 1. 创建分支 | `git checkout -b feature/<name>` + `git config branch.feature/<name>.parent <当前分支>` | 从当前分支拉出，并显式记录父分支 |
 | 2. 脚手架 | `openspec-cn new change "<name>"` | 只创建变更目录和 `.openspec.yaml`，不填内容 |
 | 3. 设计对话 | 多轮问答（可配合 `grill-me`） | 探索设计，产出写入 `openspec/changes/<name>/`（proposal.md、design.md、specs/） |
-| 4. 任务拆解 | 设计确认后直接编写 | 把设计拆成可勾选的 `openspec/changes/<name>/tasks.md`（含 Hardness Check） |
+| 4. 任务拆解 | 设计确认后直接编写 | 把设计拆成可勾选的 `openspec/changes/<name>/tasks.md`。拆解规则见「任务拆解规则」小节，骨架从 `examples/standard-change/tasks.md` 复制起稿（含 Hardness Check） |
 | 5. 执行 | `implement`（核心逻辑配合 `tdd`，修 bug 用 `diagnose`） | 严格按 `tasks.md` 逐项推进，完成一项勾一项 |
 | 6. 自查归档 | `code-review` → `/opsx:archive` | 先 `code-review` 自查，再运行 `.\validation\validate-template.cmd`，最后移入 `openspec/changes/archive/`（在合并回父分支前完成） |
 | 7. 合并代码 | 读 `git config --get branch.<current>.parent` → `git merge` 回该父分支 → 按上文「维护节奏」规则追加 `devlog.md`（注明父分支名） | 合并目标是**父分支**，不一定是 `main`；删除特性分支 |
+
+#### 任务拆解规则
+
+第 4 步把已确认的设计翻译成 `tasks.md`，不产生新决策。落点 `openspec/changes/<name>/tasks.md`。规则：
+
+1. **按分层/模块分组**：如 数据层 → 工具类 → 业务服务 → 接口层 → 集成验证 → 收尾；组内按**依赖顺序**排列（被依赖的先做）
+2. **每条任务 = 一次可独立完成并勾选的动作**，能指明落点文件；避免"实现某个功能"（太粗）或"写第 N 行"（太细）
+3. **测试内联**：每一层留一条该层单测任务（配合 `tdd` 红绿重构）；集成测试单列一组，按 `specs/<feature>/spec.md` 的场景编号对齐
+4. **Hardness Check 必填**：从 `examples/standard-change/tasks.md` 复制，对照 design.md 逐条勾选或注明不适用
+5. **收尾组固定**：更新 `spec/tasks.md` 勾选、`spec/devlog.md` 追加、`/opsx:archive` 归档
+6. **执行期可修正**：执行阶段（第 5 步）若发现拆错了（漏任务/顺序错/粒度不对），停下来改 `tasks.md` 再继续——它是活文档，不必固守初稿
+
+骨架从 `examples/standard-change/tasks.md` 复制。
 
 ## OpenSpec 变更管理
 
