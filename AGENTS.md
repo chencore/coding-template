@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## 项目概览
 
-这是一个 **SpecCoding 全栈开发模板**，基于 Codex + OpenSpec + Superpowers 三件套工作流。
+这是一个 **SpecCoding 全栈开发模板**，基于 Codex + OpenSpec + mattpocock/skills 三件套工作流。
 
 - `backend/` — 后端服务（技术栈自选）
 - `frontend/` — 前端（Web / H5 / App 皆可）；`frontend/design.md` 仅在前端界面任务加载
@@ -24,8 +24,8 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 | 阶段 | 对应工具 | AI 姿态 |
 |------|----------|---------|
-| **方案制定** | brainstorming、writing-plans、需求澄清、架构决策 | **多问、列 tradeoff、设 checkpoint**——关键判断交给人类，不要替人类拍板 |
-| **执行落地** | executing-plans、写代码、跑测试、修 bug、走 git/openspec 流程 | **尽量自主推进**，方案确认后不要每一步都请示 |
+| **方案制定** | 需求澄清、设计对话（可配合 `grill-me`）、架构决策 | **多问、列 tradeoff、设 checkpoint**——关键判断交给人类，不要替人类拍板 |
+| **执行落地** | `implement` / `tdd`、写代码、跑测试、修 bug（`diagnose`）、走 git/openspec 流程 | **尽量自主推进**，方案确认后不要每一步都请示 |
 
 **执行阶段必须停下来请示**的场景仅限：
 
@@ -66,7 +66,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 |------|----------|------|
 | S | 文档、测试、本地修复、单模块小改动 | 轻流程：`tasks.md` 有 Hardness Check；`design.md` 可选 |
 | M | 单模块新行为或一个公开接口变化 | 标准 OpenSpec：proposal / design / specs / tasks |
-| L | 跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险 | 先架构讨论；`design.md` 必须写取舍与回滚 |
+| L | 跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险 | 先架构讨论（可配合 `grill-me`）；`design.md` 必须写取舍与回滚 |
 
 不确定时选更高一级。
 
@@ -112,7 +112,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 **流程**：
 
-1. **讨论与澄清（多轮对话）**：通过问答梳理**本次新增/修订**的需求边界（不要重新讨论已确认过的条目）——哪些是新增、哪些是修订老需求、是否影响架构。允许多轮往返，AI 主动补问遗漏点（场景、约束、优先级、验收标准等）。可配合 `/superpowers:brainstorming` 使用。
+1. **讨论与澄清（多轮对话）**：通过问答梳理**本次新增/修订**的需求边界（不要重新讨论已确认过的条目）——哪些是新增、哪些是修订老需求、是否影响架构。允许多轮往返，AI 主动补问遗漏点（场景、约束、优先级、验收标准等）。可配合 `grill-me` 使用。
 2. **确认 checkpoint（本地化）**：AI 汇总**本次**要写入的条目（新增 X 条、修订 Y 条、架构是否动），请**触发人本人**显式确认（"确认" / "OK 写入" 等）。**不需要跨人签字**——版本整体范围由团队自行对齐，AI 不做仲裁。未得到明确确认不得动笔。
 3. **批量写入 spec**（确认后一次完成）：
    - `requirements.md`：每条需求前加版本标签 `[v1.2 新增]`（或 `[2026-04-23 新增]`，无版本时）并赋唯一 ID `R-v1.2-<缩写>-<序号>`（无版本时为 `R-2026-04-23-<缩写>-<序号>`，**序号为当前发起人在本版本内已有条目数 + 1**，逐条递增）；若是修订老需求，新条目标签 `[v1.2 修订：取代 <旧 ID>]`，**原条目保留并在其末尾追加"已由 <新 ID> 取代"**（不得直接删改原条目）；文末维护"修订历史"区块汇总版本级变更
@@ -135,7 +135,7 @@ AI 自动：
 ## 开发工作流（严格按此流程）
 
 ```
-git branch → openspec scaffold → brainstorming → writing-plans → executing-plans → openspec archive → git merge
+git branch → openspec scaffold → 设计对话 → 任务拆解 → 执行 → 自查归档 → git merge
 ```
 
 ### 分支模型（两级）
@@ -171,10 +171,10 @@ git config branch.feature/<name>.parent "$parent"
 |------|------|------|
 | 1. 创建分支 | `git checkout -b feature/<name>` + `git config branch.feature/<name>.parent <当前分支>` | 从当前分支拉出，并显式记录父分支 |
 | 2. 脚手架 | `openspec-cn new change "<name>"` | 只创建变更目录和 `.openspec.yaml`，不填内容 |
-| 3. 设计 | `/superpowers:brainstorming` | 探索设计，产出写入 `openspec/changes/<name>/`（proposal.md、design.md、specs/、tasks.md） |
-| 4. 制定计划 | `/superpowers:writing-plans` | **产出的 plan.md 必须写入 `openspec/changes/<name>/plan.md`**，与同变更的 proposal / design / specs / tasks 放在同一目录下，**不要**散落到仓库根或其他位置 |
-| 5. 执行 | `/superpowers:executing-plans` | 严格按 `openspec/changes/<name>/plan.md` 执行代码变更 |
-| 6. 归档 | `/opsx:archive` | 先运行 `.\validation\validate-template.cmd`，再移入 `openspec/changes/archive/`（在合并回父分支前完成） |
+| 3. 设计对话 | 多轮问答（可配合 `grill-me`） | 探索设计，产出写入 `openspec/changes/<name>/`（proposal.md、design.md、specs/） |
+| 4. 任务拆解 | 设计确认后直接编写 | 把设计拆成可勾选的 `openspec/changes/<name>/tasks.md`（含 Hardness Check） |
+| 5. 执行 | `implement`（核心逻辑配合 `tdd`，修 bug 用 `diagnose`） | 严格按 `tasks.md` 逐项推进，完成一项勾一项 |
+| 6. 自查归档 | `code-review` → `/opsx:archive` | 先 `code-review` 自查，再运行 `.\validation\validate-template.cmd`，最后移入 `openspec/changes/archive/`（在合并回父分支前完成） |
 | 7. 合并代码 | 读 `git config --get branch.<current>.parent` → `git merge` 回该父分支 → 按上文「维护节奏」规则追加 `devlog.md`（注明父分支名） | 合并目标是**父分支**，不一定是 `main`；删除特性分支 |
 
 ## OpenSpec 变更管理
@@ -184,8 +184,7 @@ git config branch.feature/<name>.parent "$parent"
 - `proposal.md` — 是什么、为什么
 - `design.md` — 如何做、架构决策、风险权衡
 - `specs/<feature>/spec.md` — 需求规格（场景式）
-- `plan.md` — 由 `/superpowers:writing-plans` 生成的详细实现计划（**必须落在本目录**）
-- `tasks.md` — 实现任务清单（checkable）
+- `tasks.md` — 实现任务清单（checkable），执行阶段直接对着它推进
 
 `tasks.md` 必须包含 `## Hardness Check`。可从 `examples/standard-change/tasks.md` 复制起稿。
 

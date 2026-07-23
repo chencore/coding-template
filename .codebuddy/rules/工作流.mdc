@@ -9,17 +9,17 @@ provider:
 ## 开发工作流（严格按此流程）
 
 ```
-git branch → openspec scaffold → brainstorming → writing-plans → executing-plans → openspec archive → git merge
+git branch → openspec scaffold → 设计对话 → 任务拆解 → 执行 → 自查归档 → git merge
 ```
 
 | 阶段 | 工具 | 说明 |
 |------|------|------|
 | 1. 创建分支 | `git checkout -b feature/<name>` | 每个变更在独立分支上开发 |
 | 2. 脚手架 | `openspec-cn new change "<name>"` | 只创建变更目录和 `.openspec.yaml`，不填内容 |
-| 3. 设计 | `/superpowers:brainstorming` | 探索设计，产出写入 `openspec/changes/<name>/`（proposal.md、design.md、specs/、tasks.md） |
-| 4. 制定计划 | `/superpowers:writing-plans` | **产出的 plan.md 必须写入 `openspec/changes/<name>/plan.md`**，与同变更的其他产出物放在同一目录，**不要**散落到仓库根或其他位置 |
-| 5. 执行 | `/superpowers:executing-plans` | 严格按 `openspec/changes/<name>/plan.md` 执行代码变更 |
-| 6. 归档 | `/opsx:archive` | 先运行 `.\validation\validate-template.cmd`，再移入 `openspec/changes/archive/` |
+| 3. 设计对话 | 多轮问答（可配合 `grill-me`） | 探索设计，产出写入 `openspec/changes/<name>/`（proposal.md、design.md、specs/） |
+| 4. 任务拆解 | 设计确认后直接编写 | 把设计拆成可勾选的 `openspec/changes/<name>/tasks.md`（含 Hardness Check） |
+| 5. 执行 | `implement`（核心逻辑配合 `tdd`，修 bug 用 `diagnose`） | 严格按 `tasks.md` 逐项推进，完成一项勾一项 |
+| 6. 自查归档 | `code-review` → `/opsx:archive` | 先 `code-review` 自查，再运行 `.\validation\validate-template.cmd`，最后移入 `openspec/changes/archive/` |
 | 7. 合并代码 | `git merge feature/<name>` | 合并回主分支，删除特性分支 |
 
 ## OpenSpec 变更管理
@@ -29,8 +29,7 @@ git branch → openspec scaffold → brainstorming → writing-plans → executi
 - `proposal.md` — 是什么、为什么
 - `design.md` — 如何做、架构决策、风险权衡
 - `specs/<feature>/spec.md` — 需求规格（场景式）
-- `plan.md` — 由 `/superpowers:writing-plans` 生成的详细实现计划（**必须落在本目录**）
-- `tasks.md` — 实现任务清单（checkable）
+- `tasks.md` — 实现任务清单（checkable），执行阶段直接对着它推进
 
 `tasks.md` 必须包含 `## Hardness Check`，格式参考 `examples/standard-change/tasks.md`。
 前端界面变更还必须包含 `## UI Check`，格式参考 `examples/standard-ui-change/tasks.md`。

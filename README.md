@@ -1,6 +1,6 @@
 # SpecCoding Template
 
-**基于 Claude Code + OpenSpec + Superpowers 三件套的全栈 AI 开发模板。**
+**基于 Claude Code + OpenSpec + mattpocock/skills 三件套的全栈 AI 开发模板。**
 
 > 让 AI 稳定交付全栈项目——告别"AI 改崩代码 / 失忆 / 跑偏"。
 
@@ -12,15 +12,15 @@
 
 - ✅ **两级 Spec 体系**：`spec/` 管项目全局，`openspec/` 管单次变更
 - ✅ **两级分支模型**：`version/v*` 承载一批需求，`feature/*` 隔离单次变更
-- ✅ **七阶段工作流**：`git branch → scaffold → brainstorm → plan → execute → archive → merge`
+- ✅ **七阶段工作流**：`git branch → scaffold → 设计对话 → 任务拆解 → 执行 → 自查归档 → merge`
 - ✅ **协作姿态明确**：方案制定多问 / 列 tradeoff，执行落地尽量自主推进
 - ✅ **Hardness 宪法**：用 5 条生产级底线约束所有变更，不堆重流程
 - ✅ **UI 设计规范**：`frontend/design.md` 只在前端界面任务加载，保证界面一致性
 - ✅ **复杂度自适应**：S/M/L 分级，小改动轻流程，大变更先架构讨论
 - ✅ **样例 + 验证**：`examples/` 给 AI 可复制形状，`validation/` 给归档前检查
-- ✅ **三工具协同**：Claude Code 执行、OpenSpec 规格、Superpowers 流程
+- ✅ **三工具协同**：Claude Code 执行、OpenSpec 规格、mattpocock/skills 技能
 - ✅ **全栈骨架**：预留 backend / frontend / prototype 目录
-- ✅ **示例变更**：`openspec/changes/archive/` 里附一个完整示例，可直接照抄
+- ✅ **标准样例**：`examples/` 内置通用变更 / UI 变更 / 模块边界样例，可直接照抄
 
 ---
 
@@ -28,8 +28,8 @@
 
 | 阶段 | 对应工具 | AI 姿态 |
 |------|----------|---------|
-| **方案制定** | brainstorming、writing-plans、需求澄清、架构决策 | **多问、列 tradeoff、设 checkpoint**——关键判断交给人类 |
-| **执行落地** | executing-plans、写代码、跑测试、走 git/openspec 流程 | **尽量自主推进**，方案确认后不要每一步都请示 |
+| **方案制定** | 需求澄清、设计对话（可配合 `grill-me`）、架构决策 | **多问、列 tradeoff、设 checkpoint**——关键判断交给人类 |
+| **执行落地** | `implement` / `tdd`、写代码、跑测试、走 git/openspec 流程 | **尽量自主推进**，方案确认后不要每一步都请示 |
 
 执行阶段只在四种情况下停下来请示：方案与实际冲突、不可逆操作（如 `git push --force` / 改 `main`）、反复尝试同一思路失败、CLAUDE.md 明确要求人工确认的节点（如归档时的 design 提升）。详见 `CLAUDE.md`。
 
@@ -37,14 +37,14 @@
 
 ---
 
-## OpenSpec 与 Superpowers 的区别
+## OpenSpec 与 mattpocock/skills 的区别
 
-OpenSpec 和 Superpowers 不是同一类工具，它们在本模板里负责两件不同的事：
+OpenSpec 和 mattpocock/skills 不是同一类工具，它们在本模板里负责两件不同的事：
 
 | 工具 | 负责什么 | 产出在哪里 | 本质 |
 |------|----------|------------|------|
 | **OpenSpec** | 管理单次变更的规格、任务、状态和归档 | `openspec/changes/<name>/` | 磁盘上的变更记录系统 |
-| **Superpowers** | 约束 AI 在某个阶段的工作方式 | 对应阶段生成或修改 OpenSpec 产物 / 代码 | AI 工作姿态和执行方法 |
+| **mattpocock/skills** | 约束 AI 在某个阶段的工作方式 | 对应阶段生成或修改 OpenSpec 产物 / 代码 | AI 工作姿态和执行方法 |
 
 ### OpenSpec：变更的“事实账本”
 
@@ -65,31 +65,33 @@ openspec/changes/<change-name>/
 ├── proposal.md
 ├── design.md
 ├── specs/<feature>/spec.md
-├── plan.md
 └── tasks.md
 ```
 
 这些文件是 AI 失忆后的恢复点，也是团队审计、回滚、复盘的依据。换句话说，OpenSpec 不负责“怎么思考”，它负责把思考结果和执行状态稳定地写到磁盘。
 
-### Superpowers：AI 的“阶段姿态”
+### mattpocock/skills：AI 的“阶段姿态”
 
-Superpowers 回答的是：
+mattpocock/skills 回答的是：
 
-- 现在应该探索，还是计划，还是执行？
+- 现在应该探索，还是拆解，还是执行？
 - AI 能不能直接写代码？
 - 什么时候应该多问？
-- 什么时候应该按计划自主推进？
+- 什么时候应该按任务清单自主推进？
 - 当前阶段应该产出什么？
 
-在本模板中常用三种姿态：
+本模板用到的六个技能：
 
-| 阶段 | Superpowers | AI 应该做什么 | 不应该做什么 |
-|------|-------------|---------------|--------------|
-| 设计 | `/superpowers:brainstorming` | 澄清需求、比较方案、写 proposal/design/specs | 不直接写业务代码 |
-| 计划 | `/superpowers:writing-plans` | 把设计拆成可执行计划，写 `plan.md` | 不直接写业务代码 |
-| 执行 | `/superpowers:executing-plans` | 严格按 `plan.md` 实现、测试、更新任务状态 | 不静默偏离计划 |
+| 阶段 | 技能 | AI 应该做什么 | 不应该做什么 |
+|------|------|---------------|--------------|
+| 设计 | `grill-me`（可选） | 澄清需求、比较方案、写 proposal/design/specs | 不直接写业务代码 |
+| 拆解 | （直接编写） | 把设计拆成可勾选的 `tasks.md`（含 Hardness Check） | 不直接写业务代码 |
+| 执行 | `implement` | 严格按 `tasks.md` 实现、测试、更新任务状态 | 不静默偏离任务清单 |
+| 执行 | `tdd` | 核心逻辑走红绿重构 | 不先写实现再补测试 |
+| 调试 | `diagnose` | 系统化定位 bug 根因 | 不盲目试改 |
+| 收尾 | `code-review` | 归档前自查实现与规格的一致性 | 不走完就归档 |
 
-Superpowers 更像“驾驶模式”：同一个 AI，在 brainstorming 时要多问和权衡，在 executing-plans 时要少问并推进到底。
+mattpocock/skills 更像“驾驶模式”：同一个 AI，在 `grill-me` 时要多问和权衡，在 `implement` 时要少问并推进到底。
 
 ### 两者如何配合
 
@@ -98,21 +100,21 @@ Superpowers 更像“驾驶模式”：同一个 AI，在 brainstorming 时要�
 ```text
 OpenSpec 创建变更目录
         ↓
-Superpowers brainstorming 生成 proposal / design / specs
+设计对话（可配合 grill-me）生成 proposal / design / specs
         ↓
-Superpowers writing-plans 生成 plan.md
+任务拆解生成 tasks.md（含 Hardness Check）
         ↓
-Superpowers executing-plans 按 plan.md 写代码并更新 tasks.md
+implement（核心逻辑配合 tdd）按 tasks.md 写代码并逐项勾选
         ↓
-OpenSpec archive 归档完整变更记录
+code-review 自查 → OpenSpec archive 归档完整变更记录
 ```
 
 一句话：
 
 - **OpenSpec 管“变更产物和生命周期”**
-- **Superpowers 管“AI 在每个阶段怎么工作”**
+- **mattpocock/skills 管“AI 在每个阶段怎么工作”**
 
-如果没有 OpenSpec，AI 的思考和执行容易散落在聊天上下文里；如果没有 Superpowers，AI 容易在还没想清楚时直接写代码，或在执行阶段反复回到讨论。
+如果没有 OpenSpec，AI 的思考和执行容易散落在聊天上下文里；如果没有技能约束，AI 容易在还没想清楚时直接写代码，或在执行阶段反复回到讨论。
 
 ---
 
@@ -186,8 +188,14 @@ npm install -g @studyzy/openspec-cn@latest
 # Claude Code
 npm install -g @anthropic-ai/claude-code
 
-# Superpowers skills（让 /superpowers:brainstorming 等命令可用）
-# 安装方式详见 Superpowers 项目文档
+# mattpocock/skills（设计澄清、执行、TDD、调试、自查等技能）
+# 在本项目根目录逐个安装（装到 .claude/skills/，随仓库共享）：
+npx skills@latest add mattpocock/skills/grill-me
+npx skills@latest add mattpocock/skills/implement
+npx skills@latest add mattpocock/skills/tdd
+npx skills@latest add mattpocock/skills/diagnose
+npx skills@latest add mattpocock/skills/code-review
+npx skills@latest add mattpocock/skills/caveman
 ```
 
 ### 3. 运行最小纵切样例
@@ -284,7 +292,7 @@ git checkout -b version/v0.1
 AI 会按 CLAUDE.md 里的「维护节奏」执行：
 
 1. **前置检查**：读分支版本号、读 `git config --get user.initials` 拿你的缩写、提醒先 `git pull`
-2. **多轮讨论澄清**：把本次要写入的需求边界一条条聊清楚（可配合 `/superpowers:brainstorming`），未确认前不动任何 spec 文档
+2. **多轮讨论澄清**：把本次要写入的需求边界一条条聊清楚（可配合 `grill-me`），未确认前不动任何 spec 文档
 3. **本地化 confirm**：AI 汇总"新增 X 条 / 修订 Y 条 / 架构是否动"，等你说"确认"
 4. **批量写入** `requirements.md` / `tasks.md` /（必要时）`design.md` / `devlog.md`，每条需求带版本标签 `[v0.1 新增]` 与唯一 ID `R-v0.1-<缩写>-<序号>`，修订老需求时旧条目保留并标"已由 X 取代"
 
@@ -301,7 +309,7 @@ AI 会按 CLAUDE.md 里的「维护节奏」执行：
 | 等级 | 典型场景 | 怎么操作 |
 |------|----------|----------|
 | S | 文档、测试、本地修复、单模块小改动、不新增契约 | 轻流程：可以只写 `tasks.md`，但必须包含 `Hardness Check`；如果涉及 UI，再加 `UI Check` |
-| M | 单模块新行为、一个公开接口变化、普通页面/组件 | 标准流程：写 proposal / design / specs / tasks，再 plan / execute / archive |
+| M | 单模块新行为、一个公开接口变化、普通页面/组件 | 标准流程：写 proposal / design / specs / tasks，再执行、自查、归档 |
 | L | 跨模块、数据模型、新依赖、安全鉴权、异步任务、发布风险、跨页面 UI 流程 | 先讨论架构或 UI 方案；`design.md` 必须写取舍、边界、失败处理和回滚，再继续执行 |
 
 不确定时按更高等级处理。
@@ -324,10 +332,9 @@ openspec-cn new change "fix-small-thing"
 - 必须包含 `## Hardness Check`
 - 如果是前端界面小改动，先读 `frontend/design.md`，并加 `## UI Check`
 
-随后直接执行、验证、归档：
+随后直接执行、验证、归档（按 `tasks.md` 逐项推进，可用 `implement` 技能驱动）：
 
 ```bash
-/superpowers:executing-plans
 .\validation\validate-template.cmd
 /opsx:archive
 ```
@@ -342,10 +349,11 @@ git checkout -b feature/add-user-auth
 git config branch.feature/add-user-auth.parent "$parent"
 
 openspec-cn new change "add-user-auth"
-/superpowers:brainstorming
-/superpowers:writing-plans
-/superpowers:executing-plans
+# 设计对话（可配合 grill-me）→ 写 proposal/design/specs
+# 任务拆解 → 写 tasks.md（含 Hardness Check）
+# 执行：implement（核心逻辑配合 tdd）按 tasks.md 推进
 .\validation\validate-template.cmd
+# code-review 自查
 /opsx:archive
 ```
 
@@ -365,7 +373,7 @@ openspec-cn new change "add-user-auth"
 
 ```bash
 openspec-cn new change "<name>"
-/superpowers:brainstorming
+# 架构讨论（可配合 grill-me）
 ```
 
 在 `openspec/changes/<name>/design.md` 里写清：
@@ -379,9 +387,10 @@ openspec-cn new change "<name>"
 确认方案后再进入：
 
 ```bash
-/superpowers:writing-plans
-/superpowers:executing-plans
+# 任务拆解 → 写 tasks.md
+# 执行：implement（核心逻辑配合 tdd）
 .\validation\validate-template.cmd
+# code-review 自查
 /opsx:archive
 ```
 
@@ -398,20 +407,18 @@ git config branch.feature/add-user-auth.parent "$parent"
 # 2. 脚手架
 openspec-cn new change "add-user-auth"
 
-# 3. 设计 —— Claude Code 中运行
-/superpowers:brainstorming
+# 3. 设计对话 —— 多轮问答澄清需求与方案（可配合 grill-me 技能）
 # → 产出 proposal.md / design.md / specs/ 写入 openspec/changes/add-user-auth/
 
-# 4. 计划
-/superpowers:writing-plans
-# → 产出的 plan.md 必须落到 openspec/changes/add-user-auth/plan.md
-#   ⚠️ 不要让它散落到仓库根或其他位置
+# 4. 任务拆解
+# → 把确认后的设计拆成可勾选的 tasks.md（含 Hardness Check）
+#   落点为 openspec/changes/add-user-auth/tasks.md
 
-# 5. 执行
-/superpowers:executing-plans
-# → 严格按 openspec/changes/add-user-auth/plan.md 执行
+# 5. 执行 —— 使用 implement 技能，核心逻辑配合 tdd
+# → 严格按 openspec/changes/add-user-auth/tasks.md 逐项推进、逐项勾选
 
-# 6. 归档（在合并回父分支前完成）
+# 6. 自查归档（在合并回父分支前完成）
+# → 先用 code-review 技能自查实现与规格的一致性
 .\validation\validate-template.cmd
 /opsx:archive
 # → 整个 add-user-auth/ 目录移入 openspec/changes/archive/
@@ -431,7 +438,7 @@ git branch -d feature/add-user-auth
 >
 > ⚠️ **版本分支 → `main` 的合并**由人工处理；AI 默认不碰 `main`，除非你显式要求。
 
-> **⚠️ 产出物归属铁律**：单次变更的所有产出物（proposal / design / specs / **plan** / tasks）必须统一放在 `openspec/changes/<name>/` 下，**不可散落**。这是"一键归档、可审计、可回滚"的前提。
+> **⚠️ 产出物归属铁律**：单次变更的所有产出物（proposal / design / specs / tasks）必须统一放在 `openspec/changes/<name>/` 下，**不可散落**。这是"一键归档、可审计、可回滚"的前提。
 
 ---
 
@@ -487,10 +494,9 @@ git checkout -b feature/<name>
 git config branch.feature/<name>.parent "$parent"
 
 openspec-cn new change "<name>"
-/superpowers:brainstorming
-/superpowers:writing-plans
-/superpowers:executing-plans
+# 设计对话（可配合 grill-me）→ 任务拆解 → implement/tdd 执行
 .\validation\validate-template.cmd
+# code-review 自查
 /opsx:archive
 ```
 
@@ -515,7 +521,7 @@ git config branch.feature/<name>.parent <parent>
 | 等级 | 用法 |
 |------|------|
 | S | 文档、单测、局部修复：只写 `tasks.md` + `Hardness Check` |
-| M | 单模块接口/行为变更：标准 OpenSpec 五件套 |
+| M | 单模块接口/行为变更：标准 OpenSpec 四件套 |
 | L | 跨模块、数据模型、新依赖、安全鉴权：先架构讨论，`design.md` 必须写取舍与回滚 |
 
 ### 第六步：把 Hardness 当作变更门槛
@@ -553,7 +559,7 @@ git config branch.feature/<name>.parent <parent>
 ├── openspec/              # 【需求级】单次变更 spec
 │   ├── config.yaml        #   OpenSpec 配置
 │   ├── changes/
-│   │   └── archive/       #   已完成的变更归档（附示例）
+│   │   └── archive/       #   已完成的变更归档
 │   └── specs/             #   单独提炼的长期规格
 │
 ├── examples/              # Agent 可复制的标准样例
@@ -602,13 +608,13 @@ git config branch.feature/<name>.parent <parent>
 | `spec/tasks.md` 状态 | ✅ openspec 归档后自动勾选 ✅ |
 | `spec/devlog.md` | ✅ kickoff 写入摘要 + feature 合回父分支时追加 |
 | `spec/structure.md` | ✅ 添加或删除顶层目录时即时更新 |
-| `openspec/changes/*` | ✅ 工作流中由 brainstorming / writing-plans / executing-plans 自动生成 |
+| `openspec/changes/*` | ✅ 工作流中由设计对话 / 任务拆解 / 执行阶段自动生成 |
 
-### 3. 物理上分开"思考 / 规划 / 执行"
+### 3. 物理上分开"思考 / 拆解 / 执行"
 
-- **brainstorming** 只产出设计文档（proposal / design / specs），**不碰代码**
-- **writing-plans** 只产出 `plan.md`，**不碰代码**
-- **executing-plans** 才动代码，而且必须严格按 `plan.md` 执行
+- **设计对话** 只产出设计文档（proposal / design / specs），**不碰代码**
+- **任务拆解** 只产出 `tasks.md`（含 Hardness Check），**不碰代码**
+- **执行** 才动代码，而且必须严格按 `tasks.md` 逐项推进
 
 这是对抗 AI 失忆的物理防线——即使某一步 AI 上下文全丢，下一步也能从磁盘上的 spec 文档重新加载继续。
 
@@ -618,14 +624,13 @@ git config branch.feature/<name>.parent <parent>
 
 ```
 openspec/changes/add-user-auth/
-├── proposal.md        ← brainstorming 产出
-├── design.md          ← brainstorming 产出
-├── specs/auth/spec.md ← brainstorming 产出
-├── plan.md            ← writing-plans 产出（⚠️ 必须落这里）
-└── tasks.md           ← 贯穿全流程的任务清单
+├── proposal.md        ← 设计对话产出
+├── design.md          ← 设计对话产出
+├── specs/auth/spec.md ← 设计对话产出
+└── tasks.md           ← 任务拆解产出，贯穿执行阶段的任务清单
 ```
 
-不要让 `plan.md` 散落到仓库根、`docs/`、`.claude/` 或任何其他位置——**归档 / 审计 / 回滚**都依赖这个归一原则。
+不要让任何变更产出物散落到仓库根、`docs/`、`.claude/` 或任何其他位置——**归档 / 审计 / 回滚**都依赖这个归一原则。
 
 ### 5. Hardness Check 必须存在
 
@@ -685,14 +690,6 @@ openspec/changes/add-user-auth/
 - `examples/standard-ui-change/tasks.md` — UI 变更任务模板，包含 UI Check + Hardness Check
 - `examples/standard-ui-change/design.md` — UI 变更设计模板
 - `examples/standard-module/README.md` — 模块边界样例
-
-`openspec/changes/archive/example-add-user-auth/` 里还存了一个完整示例变更：
-
-- `proposal.md` — 变更提案
-- `design.md` — 技术方案
-- `specs/auth/spec.md` — 场景式规格
-- `plan.md` — writing-plans 生成的详细实现计划
-- `tasks.md` — 实现任务清单
 
 新手第一次用，直接照着这个结构填就行。
 
