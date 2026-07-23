@@ -31,6 +31,21 @@
 
 <!-- 最新条目在最上面 -->
 
+### 2026-07-23 · doc-task-decomposition-guide（父分支：main）
+
+**摘要**：为「任务拆解」阶段补齐编写指引——CLAUDE.md/AGENTS.md 新增「任务拆解规则」六条小节，工作流.mdc 补内联速记，examples 两个 tasks.md 骨架补规则指针。
+
+**关键决策**：
+- 规则沉淀在 CLAUDE.md 一处，examples 骨架只放指针，避免多处维护漂移
+- 工作流.mdc 用内联速记而非指针——它是独立精简版，引用 CLAUDE.md 会制造耦合
+
+**踩坑 / 经验**：
+- 执行期发现 tasks.md 与实现偏差（mdc 指针→速记），按规则 6"执行期可修正"停下来改 tasks.md 再继续——该机制首次实战验证有效
+- **发现 validate-ui.ps1 误报 bug**：变更目录内文本引用 `standard-ui-change` 时，`ui` 被 `\b(ui|...)\b` 关键词命中，非 UI 变更被误判。待另开变更修复
+
+**相关产出**：
+- 归档位置：`openspec/changes/archive/2026-07-23-doc-task-decomposition-guide/`
+
 ### 2026-04-16 · bootstrap-speccoding-template
 
 **摘要**：从 SpecCoding Template 初始化项目骨架。
