@@ -58,6 +58,8 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 前端界面变更必须在 `openspec/changes/<name>/tasks.md` 包含 `## UI Check`，格式参考 `examples/standard-ui-change/tasks.md`。
 
+**UI 校验的误判豁免**：`validation/validate-ui.ps1` 靠关键词给变更分类。反引号包裹的路径/目录引用（如 `` `examples/standard-ui-change` ``）已被剥离、不参与分类；但若变更正文仍不可避免出现 UI 关键词而本身**不是**前端界面变更（典型场景：修复 UI 校验器、讨论 UI 规范文档），可在 `tasks.md` 任意位置加一行豁免标记 `<!-- not-ui: 原因 -->`，该校验将跳过本变更。**仅限非界面变更使用**；真界面变更滥用此标记等于绕过 UI Check。
+
 ### 复杂度自适应
 
 进入变更时先选复杂度：

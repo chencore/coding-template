@@ -162,6 +162,8 @@ code-review 自查 → OpenSpec archive 归档完整变更记录
 
 UI 变更的 `tasks.md` 必须包含 `## UI Check`，可从 `examples/standard-ui-change/tasks.md` 复制。
 
+> **⚠️ UI 校验的误判豁免**：归档前的 `validate-ui.ps1` 靠关键词给变更分类。反引号包裹的路径/目录引用（如 `` `examples/standard-ui-change` ``）已被剥离、不参与分类；若变更正文仍不可避免出现 UI 关键词而本身**不是**前端界面变更（如修复 UI 校验器、讨论 UI 规范文档），可在 `tasks.md` 任意位置加一行 `<!-- not-ui: 原因 -->` 跳过该校验。**仅限非界面变更使用**——真界面变更滥用此标记等于绕过 UI Check。
+
 ---
 
 ## 快速开始
