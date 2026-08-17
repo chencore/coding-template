@@ -1,11 +1,10 @@
 {
-  "name": "speccoding-template",
+  "name": "zhaojian",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "start": "node backend/server.js",
-    "test": "node --test backend/*.test.js",
+    "dev": "docker-compose up -d && npm --prefix backend run start:dev",
+    "test": "npm --prefix backend run test && cd frontend && flutter test",
     "validate": "validation\\validate-template.cmd"
   }
 }

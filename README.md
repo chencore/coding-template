@@ -200,82 +200,43 @@ npx skills@latest add mattpocock/skills/code-review   # 收尾：归档前自查
 npx skills@latest add mattpocock/skills/caveman       # 可选：压缩 AI 输出，执行阶段降噪
 ```
 
-### 3. 运行最小纵切样例
+### 3. 本地开发环境（照见 App）
 
-模板内置一个无外部依赖的最小可运行纵切，用来验证“前端界面 → 后端 API → 领域逻辑 → 测试 → 模板校验”这条链路。
+> 原为模板最小纵切样例（`backend/server.js` 等），已由 bootstrap-app-scaffold 变更为真实项目骨架取代。
 
-#### 3.1 样例目录结构
+技术栈：Flutter（`frontend/`，仅 iOS 首发）+ NestJS（`backend/`）+ PostgreSQL/pgvector（docker-compose）+ 火山方舟 LLM。
 
-```text
-.
-├── package.json
-├── backend/
-│   ├── server.js       # Node HTTP server：静态前端 + API
-│   ├── tasks.js        # 任务领域逻辑
-│   └── tasks.test.js   # Node 内置测试
-└── frontend/
-    ├── index.html      # 页面入口
-    ├── app.js          # 前端交互和 API 调用
-    ├── styles.css      # 样例样式，遵守 frontend/design.md
-    └── design.md       # UI 设计规范，仅前端界面任务加载
-```
-
-接口和页面：
-
-- 页面入口：`GET /`
-- 健康检查：`GET /api/health`
-- 任务列表：`GET /api/tasks`
-- 创建任务：`POST /api/tasks`
-- 切换状态：`POST /api/tasks/:id/toggle`
-
-#### 3.2 编译 / 安装
-
-当前样例只使用 Node.js 内置模块，没有第三方依赖，不需要 `npm install`，也没有构建步骤。
-
-要求：
-
-- Node.js 18+（需要内置 `node:test` 和 `fetch`）
-
-#### 3.3 测试与模板验证
+#### 3.1 首次启动
 
 ```bash
-npm test
-npm run validate
+cp .env.example .env          # 按需填写 ARK_API_KEY / ARK_MODEL_ID
+docker-compose up -d          # PostgreSQL 16 + pgvector
+cd backend && npm ci && npm run start:dev
 ```
 
-其中：
-
-- `npm test`：运行 `backend/tasks.test.js`
-- `npm run validate`：运行 `validation/validate-template.cmd`，检查 Hardness / UI 规则
-
-#### 3.4 启动运行
+验证：
 
 ```bash
-npm start
+curl http://localhost:3000/api/health       # db 连通状态
+curl http://localhost:3000/api/health/llm   # 火山方舟连通探针（未配置密钥返回 not_configured）
 ```
 
-如果 PowerShell 提示 `npm.ps1` 被执行策略禁止，改用：
+#### 3.2 前端（Flutter）
 
-```powershell
-npm.cmd test
-npm.cmd run validate
-npm.cmd start
+```bash
+cd frontend
+flutter pub get
+flutter run --dart-define=API_BASE_URL=http://localhost:3000   # 需 Xcode（iOS 模拟器）
 ```
 
-启动后打开：
+启动页为临时骨架验证页，展示后端健康状态三态（连通 / 降级 / 不可达）。
 
-```text
-http://localhost:3000
+#### 3.3 测试与校验
+
+```bash
+npm test              # 后端 vitest + 前端 flutter test
+npm run validate      # validation/validate-template.cmd，检查 Hardness / UI 规则
 ```
-
-也可以直接检查 API：
-
-```powershell
-Invoke-RestMethod http://localhost:3000/api/health
-Invoke-RestMethod http://localhost:3000/api/tasks
-```
-
-这个样例只用于证明模板流程可跑通，不规定你真实项目必须使用 Node 或这个目录结构。
 
 ### 4. 版本 kickoff（Phase 0）
 

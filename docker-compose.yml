@@ -1,0 +1,24 @@
+services:
+  db:
+    # 本地构建：postgres:16 + apt 安装 pgvector（见 docker/db/Dockerfile 注释）
+    build: ./docker/db
+    image: zhaojian/pg16-vector
+    container_name: zhaojian-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-zhaojian}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-zhaojian_dev}
+      POSTGRES_DB: ${DB_NAME:-zhaojian}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-zhaojian} -d ${DB_NAME:-zhaojian}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
