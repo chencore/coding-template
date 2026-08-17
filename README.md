@@ -226,7 +226,8 @@ curl http://localhost:3000/api/health/llm   # 火山方舟连通探针（未配�
 ```bash
 cd frontend
 flutter pub get
-flutter run --dart-define=API_BASE_URL=http://localhost:3000   # 需 Xcode（iOS 模拟器）
+flutter run --dart-define=API_BASE_URL=http://localhost:3000        # iOS 模拟器（需 Xcode）
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000         # Android 模拟器（10.0.2.2 指向宿主机）
 ```
 
 启动页为临时骨架验证页，展示后端健康状态三态（连通 / 降级 / 不可达）。

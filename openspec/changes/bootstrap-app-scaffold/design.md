@@ -19,6 +19,8 @@
 
 **理由**：kickoff 讨论结论——性能好、UI 一致性高。代价是 Dart 单语言生态、iOS 原生能力（M3 拦截模块）需写 Swift 插件；原生模块风险已在 spec/design.md 记录，M3 前必须验证。
 
+**执行期修正（2026-08-18）**：Xcode 未完整安装阻塞 iOS 模拟器验证，经用户指示工程同时开启 Android 平台（`flutter create --platforms ios,android`），场景 8 改经 Android 模拟器（Pixel 7 API 36）验证通过。**产品首发策略不变（仅 iOS）**，Android 平台仅作开发期验证目标；模拟器访问宿主机后端用 `10.0.2.2`。
+
 ### 2. 后端 —— NestJS + TypeScript
 
 **选择**：NestJS（@nestjs/cli 初始化），代码落 `backend/`
