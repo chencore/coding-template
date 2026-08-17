@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>照见 · App 原型 v2（数字文房）</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #EFECE4;
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    color: #2A2A28;
+  }
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    background: rgba(239,236,228,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #E0DCD2;
+  }
+  .topbar h1 {
+    font-family: "Songti SC", "Noto Serif SC", serif;
+    font-size: 17px; font-weight: 600; letter-spacing: 0.12em;
+    color: #2A2A28;
+  }
+  .mode-switch { display: flex; gap: 6px; }
+  .mode-switch button {
+    font-size: 12px; padding: 6px 14px; border-radius: 999px;
+    border: 1px solid #CFC9BC; background: transparent; color: #8A857C;
+    cursor: pointer; font-family: inherit;
+  }
+  .mode-switch button.active {
+    background: #B03A2E; color: #FAF9F6; border-color: #B03A2E; font-weight: 600;
+  }
+  .canvas { padding: 32px 24px 60px; }
+  .canvas.overview {
+    display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;
+    justify-content: center;
+  }
+  .screen-label {
+    font-size: 12px; color: #8A857C; margin-bottom: 10px; letter-spacing: 0.06em;
+  }
+  .screen-label .tag {
+    display: inline-block; font-size: 10px; padding: 2px 8px;
+    border: 1px solid #CFC9BC; border-radius: 999px; margin-left: 8px;
+    color: #B03A2E; vertical-align: 1px;
+  }
+  .flow-wrap { display: flex; justify-content: center; padding-top: 8px; }
+  .hint {
+    max-width: 640px; margin: 0 auto 28px; text-align: center;
+    font-size: 13px; color: #8A857C; line-height: 1.7;
+  }
+  .hint b { color: #B03A2E; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>照见 · 原型 v2</h1>
+  <div class="mode-switch">
+    <button class="active" data-mode="overview" onclick="switchMode('overview')">平铺 Overview</button>
+    <button data-mode="flow" onclick="switchMode('flow')">可点击 Flow</button>
+  </div>
+</div>
+
+<div class="canvas overview" id="stage"></div>
+
+<script type="text/babel">
+/* ============================================================
+   照见 v2 · 数字文房设计系统
+   暖白纸感 + 炭灰墨字 + 朱砂印章（唯一彩色）
+   ============================================================ */
+const zj = {
+  paper: '#FAF9F6',      // 暖白纸面
+  bg: '#F4F1EA',         // 页面底（略深于纸）
+  ink: '#2A2A28',        // 主墨色
+  inkSoft: '#5C574E',    // 次级墨
+  inkDim: '#8A857C',     // 淡墨
+  hairline: '#E6E1D6',   // 极细线
+  cinnabar: '#B03A2E',   // 朱砂红（唯一彩色）
+  cinnabarSoft: 'rgba(176,58,46,0.08)',
+};
+const zjSerif = '"Songti SC", "Noto Serif SC", serif';
+const zjSans = '-apple-system, "PingFang SC", sans-serif';
+
+/* ---------- 印章组件（朱砂圆章） ---------- */
+function Seal({ char = '照', size = 34, text, dim }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        border: `1.5px solid ${dim ? 'rgba(176,58,46,0.35)' : zj.cinnabar}`,
+        color: dim ? 'rgba(176,58,46,0.5)' : zj.cinnabar,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: zjSerif, fontSize: size * 0.42, fontWeight: 600,
+        background: dim ? 'transparent' : zj.cinnabarSoft,
+      }}>{char}</div>
+      {text && <span style={{ fontSize: 11, color: zj.inkDim }}>{text}</span>}
+    </div>
+  );
+}
+
+/* ---------- IosFrame（浅色适配） ---------- */
+const iosFrameStyles = {
+  wrapper: { display: 'inline-block', padding: 12, background: '#000', borderRadius: 60, boxShadow: '0 0 0 2px #1f2937, 0 20px 60px rgba(0,0,0,0.3)', position: 'relative' },
+  screen: { position: 'relative', borderRadius: 48, overflow: 'hidden', background: '#fff' },
+  statusBar: { position: 'absolute', top: 0, left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px 0 32px', fontSize: 16, fontWeight: 600, fontFamily: '-apple-system, "SF Pro Text", sans-serif', zIndex: 20, pointerEvents: 'none' },
+  dynamicIsland: { position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', width: 124, height: 36, background: '#000', borderRadius: 999, zIndex: 30 },
+  statusIcons: { display: 'flex', alignItems: 'center', gap: 6 },
+  signalIcon: { display: 'flex', alignItems: 'flex-end', gap: 2, height: 12 },
+  signalBar: { width: 3, background: 'currentColor', borderRadius: 1 },
+  batteryIcon: { width: 26, height: 12, border: '1.5px solid currentColor', borderRadius: 3, padding: 1, position: 'relative', opacity: 0.8 },
+  batteryCap: { position: 'absolute', top: 3, right: -3, width: 2, height: 6, background: 'currentColor', borderRadius: '0 1px 1px 0' },
+  content: { position: 'absolute', top: 54, left: 0, right: 0, bottom: 34, overflow: 'auto' },
+  homeIndicator: { position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', width: 140, height: 5, background: 'rgba(42,42,40,0.3)', borderRadius: 999, zIndex: 10 },
+};
+function IosFrame({ children, width = 393, height = 852, time = '23:41', battery = 62 }) {
+  return (
+    <div style={iosFrameStyles.wrapper}>
+      <div style={{ ...iosFrameStyles.screen, width, height, background: zj.paper }}>
+        <div style={{ ...iosFrameStyles.statusBar, color: zj.ink }}>
+          <span>{time}</span>
+          <div style={iosFrameStyles.statusIcons}>
+            <div style={iosFrameStyles.signalIcon}>
+              <div style={{ ...iosFrameStyles.signalBar, height: 4 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 6 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 9 }} />
+              <div style={{ ...iosFrameStyles.signalBar, height: 11 }} />
+            </div>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none" style={{ color: zj.ink }}>
+              <path d="M8 11.5a1 1 0 100-2 1 1 0 000 2z" fill="currentColor" />
+              <path d="M3 7.5a7 7 0 0110 0" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+              <path d="M1 4.5a11 11 0 0114 0" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.7" />
+            </svg>
+            <div style={iosFrameStyles.batteryIcon}>
+              <div style={{ width: '62%', height: '100%', background: 'currentColor', borderRadius: 1, opacity: 0.9 }} />
+              <div style={iosFrameStyles.batteryCap} />
+            </div>
+          </div>
+        </div>
+        <div style={iosFrameStyles.dynamicIsland} />
+        <div style={iosFrameStyles.content}>{children}</div>
+        <div style={iosFrameStyles.homeIndicator} />
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   屏 1：主界面
+   ============================================================ */
+function HomeScreen({ onMirror, onReport, onIntercept, onTask, onLibrary }) {
+  return (
+    <div style={{ minHeight: '100%', background: zj.paper, padding: '0 26px', position: 'relative' }}>
+      <div style={{ marginTop: 62, display: 'flex', alignItems: 'baseline', gap: 10 }}>
+        <span style={{ fontFamily: zjSerif, fontSize: 30, fontWeight: 600, color: zj.ink, letterSpacing: '0.14em' }}>照见</span>
+        <span style={{ fontSize: 10, color: zj.inkDim, letterSpacing: '0.24em' }}>ZHAOJIAN</span>
+      </div>
+
+      {/* 导师问候 */}
+      <div style={{ marginTop: 26, paddingBottom: 18, borderBottom: `1px solid ${zj.hairline}` }}>
+        <p style={{ fontSize: 10, color: zj.cinnabar, letterSpacing: '0.14em', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Seal char="默" size={22} /> 默 · 你的导师
+        </p>
+        <p style={{ fontFamily: zjSerif, fontSize: 14, color: zj.ink, marginTop: 10, lineHeight: 1.8 }}>
+          「林晓，昨晚 1 点半才睡。<br/>今天想先聊哪件？」
+        </p>
+      </div>
+
+      {/* 大问句 */}
+      <p style={{ fontFamily: zjSerif, fontSize: 21, color: zj.ink, lineHeight: 1.9, marginTop: 34, letterSpacing: '0.04em' }}>
+        今天，你更接近<br/>真实的自己了吗？
+      </p>
+
+      {/* 三入口：书页式列表 */}
+      <div style={{ marginTop: 30 }}>
+        <button onClick={onMirror} style={{ width: '100%', textAlign: 'left', padding: '17px 2px', border: 'none', borderBottom: `1px solid ${zj.hairline}`, background: 'transparent', cursor: 'pointer', fontFamily: zjSans }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 14, color: zj.ink, fontWeight: 600 }}>镜子时刻 · 日省</span>
+            <span style={{ fontSize: 11, color: zj.cinnabar }}>1 分钟 →</span>
+          </div>
+          <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 5 }}>每天对自己说一句真话</p>
+        </button>
+        <button onClick={onTask} style={{ width: '100%', textAlign: 'left', padding: '17px 2px', border: 'none', borderBottom: `1px solid ${zj.hairline}`, background: 'transparent', cursor: 'pointer', fontFamily: zjSans }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 14, color: zj.ink, fontWeight: 600 }}>今日日课 · 精进</span>
+            <span style={{ fontSize: 11, color: zj.cinnabar }}>1 件小事 →</span>
+          </div>
+          <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 5 }}>小到不可能失败 · 来自你昨天说的话</p>
+        </button>
+        <button onClick={onLibrary} style={{ width: '100%', textAlign: 'left', padding: '17px 2px', border: 'none', borderBottom: `1px solid ${zj.hairline}`, background: 'transparent', cursor: 'pointer', fontFamily: zjSans }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 14, color: zj.ink, fontWeight: 600 }}>我的藏 · 知识库</span>
+            <span style={{ fontSize: 11, color: zj.cinnabar }}>47 条 →</span>
+          </div>
+          <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 5 }}>你认下的道理，迷茫时回来翻</p>
+        </button>
+        <button onClick={onReport} style={{ width: '100%', textAlign: 'left', padding: '15px 2px', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: zjSans }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: zj.inkSoft }}>对账周报</span>
+            <span style={{ fontSize: 10, color: zj.cinnabar }}>2 份新 →</span>
+          </div>
+        </button>
+      </div>
+
+      <button onClick={onIntercept} style={{ marginTop: 14, width: '100%', padding: '12px 0', borderRadius: 12, background: 'transparent', border: `1px dashed ${zj.hairline}`, color: zj.inkDim, fontSize: 11, cursor: 'pointer', fontFamily: zjSans }}>
+        ⚡ 演示：此刻你打开了抖音…
+      </button>
+
+      {/* 印章墙 */}
+      <div style={{ position: 'absolute', bottom: 32, width: 'calc(100% - 52px)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[1, 2, 3, 4, 5, 6, 7].map(i => (
+              <div key={i} style={{
+                width: 14, height: 14, borderRadius: '50%',
+                border: i === 7 ? '1.5px solid rgba(176,58,46,0.6)' : `1.5px solid ${zj.hairline}`,
+                background: i < 7 ? 'transparent' : zj.cinnabarSoft,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {i === 7 && <span style={{ fontSize: 7, color: zj.cinnabar, fontFamily: zjSerif }}>照</span>}
+              </div>
+            ))}
+            <span style={{ fontSize: 10, color: zj.inkDim, marginLeft: 4, alignSelf: 'center' }}>…</span>
+          </div>
+          <span style={{ fontSize: 11, color: zj.inkSoft, letterSpacing: '0.06em' }}>已照见 23 天 · 今晚的月亮很好</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   屏 2：镜子时刻
+   ============================================================ */
+function MirrorScreen({ onBack }) {
+  const [answers, setAnswers] = React.useState([
+    { q: '今天有什么事让你真正开心过 3 秒？', a: '午休时楼下那只橘猫蹭了我一下。', time: '昨天 12:47' },
+  ]);
+  const [text, setText] = React.useState('');
+  const [done, setDone] = React.useState(false);
+
+  const send = () => {
+    if (!text.trim()) return;
+    setAnswers([...answers, { q: '如果明天手机坏了，你最想先做什么？', a: text, time: '现在' }]);
+    setText('');
+    setDone(true);
+  };
+
+  return (
+    <div style={{ minHeight: '100%', background: zj.paper, padding: '20px 26px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+        <button onClick={onBack} style={{ fontSize: 12, color: zj.inkDim, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: zjSans }}>← 退出</button>
+        <span style={{ fontSize: 10, color: zj.inkDim, letterSpacing: '0.14em' }}>镜子时刻 · 第 24 天</span>
+      </div>
+
+      <div style={{ marginTop: 44 }}>
+        <p style={{ fontSize: 10, color: zj.cinnabar, letterSpacing: '0.14em' }}>默 · 你的导师</p>
+        <p style={{ fontFamily: zjSerif, fontSize: 21, color: zj.ink, lineHeight: 1.9, marginTop: 12 }}>
+          「如果明天手机坏了，<br/>你最想先做什么？」
+        </p>
+        <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 12 }}>说真话。只有你自己听得到。</p>
+      </div>
+
+      <div style={{ marginTop: 30, display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+        {answers.map((x, i) => (
+          <div key={i} style={{ padding: '13px 2px 13px 0', borderBottom: `1px solid ${zj.hairline}` }}>
+            <p style={{ fontSize: 10, color: zj.inkDim }}>{x.q} · {x.time}</p>
+            <p style={{ fontFamily: zjSerif, fontSize: 15, color: zj.ink, marginTop: 7, lineHeight: 1.7 }}>「{x.a}」</p>
+          </div>
+        ))}
+        {done && (
+          <div style={{ padding: '15px 16px', background: zj.cinnabarSoft, borderRadius: 12 }}>
+            <p style={{ fontSize: 10, color: zj.cinnabar, letterSpacing: '0.12em' }}>默 · 你的导师</p>
+            <p style={{ fontFamily: zjSerif, fontSize: 14, color: zj.ink, lineHeight: 1.9, marginTop: 8 }}>
+              我听见了。你说「{answers[answers.length - 1].a}」的时候，比刷视频时的你，像你自己。
+            </p>
+          </div>
+        )}
+        {done && (
+          <div style={{ padding: '13px 2px' }}>
+            <p style={{ fontSize: 10, color: zj.inkDim }}>历史共鸣 · 塞涅卡（公元 1 世纪）</p>
+            <p style={{ fontFamily: zjSerif, fontSize: 14, color: zj.inkSoft, lineHeight: 1.9, marginTop: 7 }}>
+              「我们不是在浪费时间，我们是在被浪费。」<br/>—— 2000 年前，他也睡不着。
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div style={{ padding: '12px 0 18px', display: 'flex', gap: 10, alignItems: 'center' }}>
+        <input
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') send(); }}
+          placeholder="说真话，或者按住说话"
+          style={{ flex: 1, padding: '13px 14px', borderRadius: 12, border: `1px solid ${zj.hairline}`, background: zj.bg, color: zj.ink, fontSize: 14, fontFamily: zjSans, outline: 'none' }}
+        />
+        <button onClick={send} style={{ padding: '13px 18px', borderRadius: 12, background: zj.cinnabar, color: '#FAF9F6', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: zjSans }}>
+          说完
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   屏 3：拦截时刻
+   ============================================================ */
+function InterceptScreen({ onEscape, onPass }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: 'rgba(42,42,40,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '0 30px' }}>
+      <div style={{ width: '100%', background: zj.paper, borderRadius: 20, padding: '28px 24px', boxShadow: '0 30px 80px rgba(0,0,0,0.25)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 8, background: '#1B1B1B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#fff' }}>▶</div>
+          <div>
+            <p style={{ fontSize: 13, color: zj.ink, fontWeight: 600 }}>抖音</p>
+            <p style={{ fontSize: 10, color: zj.inkDim }}>今晚第 3 次打开</p>
+          </div>
+          <Seal char="默" size={24} text="" style={{ marginLeft: 'auto' }} />
+        </div>
+
+        <p style={{ fontFamily: zjSerif, fontSize: 19, color: zj.ink, lineHeight: 1.9, marginTop: 26 }}>
+          「你现在是想逃避什么，<br/>还是真的想看？」
+        </p>
+        <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 10, lineHeight: 1.8 }}>
+          昨晚 23:47 你在这里说过：「今天有点烦，想刷会手机」<br/>——然后刷到 1 点半。
+        </p>
+
+        <div style={{ marginTop: 26, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button onClick={onEscape} style={{ padding: '14px 0', borderRadius: 12, background: zj.cinnabar, color: '#FAF9F6', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: zjSans }}>
+            想逃避 → 去镜子时刻
+          </button>
+          <button onClick={onPass} style={{ padding: '14px 0', borderRadius: 12, background: 'transparent', color: zj.inkSoft, border: `1px solid ${zj.hairline}`, fontSize: 13, cursor: 'pointer', fontFamily: zjSans }}>
+            真的想看（放行，不评判）
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   屏 4：今日日课
+   ============================================================ */
+function DayTaskScreen({ onBack, onLibrary }) {
+  const [done, setDone] = React.useState(false);
+  const [note, setNote] = React.useState('');
+  return (
+    <div style={{ minHeight: '100%', background: zj.paper, padding: '20px 26px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+        <button onClick={onBack} style={{ fontSize: 12, color: zj.inkDim, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: zjSans }}>← 返回</button>
+        <span style={{ fontSize: 10, color: zj.inkDim, letterSpacing: '0.14em' }}>今日日课 · 第 24 天</span>
+      </div>
+
+      <p style={{ fontFamily: zjSerif, fontSize: 20, color: zj.ink, marginTop: 30, fontWeight: 600 }}>
+        今日只做这一件小事
+      </p>
+      <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 8 }}>小到不可能失败。不是任务，是日课。</p>
+
+      <div style={{ marginTop: 22, display: 'flex', alignItems: 'center', gap: 18 }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontFamily: zjSerif, fontSize: 21, color: zj.ink, lineHeight: 1.7 }}>
+            给妈妈打<br/>5 分钟电话
+          </p>
+          <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 10, lineHeight: 1.8 }}>
+            来源：你这周说了 2 次「想给妈妈打电话」<br/>不算练，算见面。5 分钟就够。
+          </p>
+        </div>
+        {done ? (
+          <Seal char="完" size={52} text="今日已盖" />
+        ) : (
+          <div style={{ width: 52, height: 52, borderRadius: '50%', border: `1.5px dashed ${zj.hairline}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 10, color: zj.inkDim, fontFamily: zjSerif }}>待盖</span>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 18, padding: '15px 2px', borderTop: `1px solid ${zj.hairline}` }}>
+        <p style={{ fontSize: 10, color: zj.inkDim }}>今日重温 · 你认下的道理</p>
+        <p style={{ fontFamily: zjSerif, fontSize: 15, color: zj.ink, lineHeight: 1.9, marginTop: 8 }}>
+          「勇气不是没有恐惧，而是带着恐惧行动。」
+        </p>
+        <p style={{ fontSize: 10, color: zj.inkDim, marginTop: 6 }}>—— 你 7 月 3 日收进「藏」 · 主题：勇气</p>
+      </div>
+
+      <div style={{ marginTop: 6, padding: '15px 2px', borderTop: `1px solid ${zj.hairline}` }}>
+        <p style={{ fontSize: 10, color: zj.inkDim }}>历史共鸣 · 曾国藩（1811-1872）</p>
+        <p style={{ fontFamily: zjSerif, fontSize: 14, color: zj.inkSoft, lineHeight: 1.9, marginTop: 8 }}>
+          「30 岁的他也觉得自己一事无成，然后给自己立了日课十二条——比你今天的日课，多十一条。」
+        </p>
+        <p style={{ fontSize: 10, color: zj.cinnabar, marginTop: 6 }}>你不孤独，人类都走过。</p>
+      </div>
+
+      {done ? (
+        <div style={{ marginTop: 18, padding: '15px 16px', background: zj.cinnabarSoft, borderRadius: 12 }}>
+          <p style={{ fontFamily: zjSerif, fontSize: 14, color: zj.ink, lineHeight: 1.9 }}>「{note || '电话打完了，她说她挺好的，我也挺好的。'}」</p>
+          <p style={{ fontSize: 10, color: zj.inkDim, marginTop: 8 }}>已记入今天的日记 · 明天日课将基于它生成</p>
+        </div>
+      ) : (
+        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 30 }}>
+          <input
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder="做完后，记一句感受（可留空）"
+            style={{ padding: '13px 14px', borderRadius: 12, border: `1px solid ${zj.hairline}`, background: zj.bg, color: zj.ink, fontSize: 13, fontFamily: zjSans, outline: 'none' }}
+          />
+          <button onClick={() => setDone(true)} style={{ padding: '15px 0', borderRadius: 12, background: zj.cinnabar, color: '#FAF9F6', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: zjSans }}>
+            做完了 · 盖章
+          </button>
+          <button onClick={onLibrary} style={{ padding: '10px 0', background: 'transparent', border: 'none', fontSize: 11, color: zj.inkDim, cursor: 'pointer', fontFamily: zjSans }}>
+            去「藏」里看看我认下的道理 →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   屏 5：我的藏
+   ============================================================ */
+function LibraryScreen({ onBack, onTask }) {
+  return (
+    <div style={{ minHeight: '100%', background: zj.paper, padding: '20px 26px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+        <button onClick={onBack} style={{ fontSize: 12, color: zj.inkDim, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: zjSans }}>← 返回</button>
+        <span style={{ fontSize: 10, color: zj.inkDim, letterSpacing: '0.14em' }}>我的藏 · 47 条</span>
+      </div>
+
+      <p style={{ fontFamily: zjSerif, fontSize: 20, color: zj.ink, marginTop: 28, fontWeight: 600 }}>你认下的道理</p>
+      <p style={{ fontSize: 11, color: zj.inkDim, marginTop: 8, lineHeight: 1.8 }}>
+        你收藏什么，你就是什么。<br/>想不通的时候，回来翻翻。
+      </p>
+
+      <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {['勇气 12', '慢下来 15', '对家人 9', '不比较 11'].map(t => (
+          <span key={t} style={{ fontSize: 11, color: zj.cinnabar, border: `1px solid rgba(176,58,46,0.4)`, background: zj.cinnabarSoft, padding: '5px 12px', borderRadius: 999 }}>{t}</span>
+        ))}
+      </div>
+      <p style={{ fontSize: 10, color: zj.inkDim, marginTop: 8 }}>思想地图：你反复认下这些主题。「勇气」与斯多葛同频 · 「慢下来」与陶渊明同频</p>
+
+      <div style={{ marginTop: 18, padding: '15px 2px', borderTop: `1px solid ${zj.hairline}` }}>
+        <p style={{ fontSize: 10, color: zj.inkDim }}>7 月 3 日 · 主题：勇气</p>
+        <p style={{ fontFamily: zjSerif, fontSize: 16, color: zj.ink, lineHeight: 1.9, marginTop: 8 }}>
+          「勇气不是没有恐惧，而是带着恐惧行动。」
+        </p>
+        <p style={{ fontSize: 11, color: zj.cinnabar, marginTop: 8 }}>你批注：说的就是我。</p>
+      </div>
+
+      <div style={{ marginTop: 6, padding: '15px 2px', borderTop: `1px solid ${zj.hairline}` }}>
+        <p style={{ fontSize: 10, color: zj.inkDim }}>8 月 2 日 · 主题：慢下来</p>
+        <p style={{ fontFamily: zjSerif, fontSize: 16, color: zj.ink, lineHeight: 1.9, marginTop: 8 }}>
+          「你刷到的不是世界，是筛选过的世界。」
+        </p>
+        <p style={{ fontSize: 11, color: zj.cinnabar, marginTop: 8 }}>你批注：那我看到的世界是假的吗？</p>
+      </div>
+
+      <button onClick={onTask} style={{ marginTop: 18, width: '100%', padding: '13px 0', borderRadius: 12, background: 'transparent', color: zj.ink, border: `1px solid ${zj.cinnabar}`, fontSize: 12, cursor: 'pointer', fontFamily: zjSans, marginBottom: 30 }}>
+        带着一条道理去做今日日课 →
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   屏 6：对账周报
+   ============================================================ */
+function ReportScreen({ onCapsule, onBack }) {
+  return (
+    <div style={{ minHeight: '100%', background: zj.paper, padding: '20px 26px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+        <button onClick={onBack} style={{ fontSize: 12, color: zj.inkDim, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: zjSans }}>← 返回</button>
+        <span style={{ fontSize: 10, color: zj.inkDim, letterSpacing: '0.14em' }}>对账周报 · 第 3 周</span>
+      </div>
+
+      <h2 style={{ fontFamily: zjSerif, fontSize: 21, color: zj.ink, marginTop: 26, fontWeight: 600 }}>这周，两个你对质</h2>
+
+      {/* 算法眼中的你 —— 灰色（无彩色） */}
+      <div style={{ marginTop: 20, padding: '16px 2px' }}>
+        <p style={{ fontSize: 11, color: zj.inkSoft, letterSpacing: '0.1em' }}>算法眼中的你</p>
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p style={{ fontSize: 13, color: zj.inkSoft, lineHeight: 1.7 }}>· 深夜 87% 的浏览是美妆 / 焦虑类内容</p>
+          <p style={{ fontSize: 13, color: zj.inkSoft, lineHeight: 1.7 }}>· 它给你贴的标签：不自信 · 想变美 · 怕被落下</p>
+          <p style={{ fontSize: 13, color: zj.inkSoft, lineHeight: 1.7 }}>· 它推断你最好卖的时段：22:00-24:00</p>
+        </div>
+      </div>
+
+      {/* 你表达的你 —— 朱砂色 */}
+      <div style={{ marginTop: 6, padding: '16px 2px', borderTop: `1px solid ${zj.hairline}`, borderBottom: `1px solid ${zj.hairline}` }}>
+        <p style={{ fontSize: 11, color: zj.cinnabar, letterSpacing: '0.1em' }}>你表达的你</p>
+        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p style={{ fontSize: 13, color: zj.ink, lineHeight: 1.7 }}>· 你想学吉他（说了 3 次）</p>
+          <p style={{ fontSize: 13, color: zj.ink, lineHeight: 1.7 }}>· 你想早点睡（说了 5 次）</p>
+          <p style={{ fontSize: 13, color: zj.ink, lineHeight: 1.7 }}>· 你想给妈妈打电话（说了 2 次，还没打）</p>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 16, padding: '15px 16px', background: zj.cinnabarSoft, borderRadius: 12 }}>
+        <p style={{ fontFamily: zjSerif, fontSize: 15, color: zj.ink, lineHeight: 1.9 }}>
+          它们俩，谁更像你？<br/><span style={{ fontSize: 11, color: zj.inkDim }}>不着急回答。这周不用做得更好，只要看见。</span>
+        </p>
+      </div>
+
+      <div style={{ marginTop: 14, padding: '13px 2px' }}>
+        <p style={{ fontSize: 10, color: zj.inkDim }}>历史共鸣 · 本周</p>
+        <p style={{ fontFamily: zjSerif, fontSize: 14, color: zj.inkSoft, lineHeight: 1.9, marginTop: 7 }}>
+          「30 岁的曾国藩也迷茫，他给自己立了日课十二条——你不是第一个在深夜问自己的人。」
+        </p>
+      </div>
+
+      <button onClick={onCapsule} style={{ marginTop: 12, width: '100%', padding: '14px 0', borderRadius: 12, background: 'transparent', color: zj.ink, border: `1px solid ${zj.cinnabar}`, fontSize: 13, cursor: 'pointer', fontFamily: zjSans, marginBottom: 30 }}>
+        打开时间胶囊 · 30 天前的你 →
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   屏 7：时间胶囊（竖排彩蛋）
+   ============================================================ */
+function CapsuleScreen({ onBack }) {
+  return (
+    <div style={{ minHeight: '100%', background: zj.paper, padding: '20px 26px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+        <button onClick={onBack} style={{ fontSize: 12, color: zj.inkDim, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: zjSans }}>← 返回</button>
+        <span style={{ fontSize: 10, color: zj.inkDim, letterSpacing: '0.14em' }}>时间胶囊 · 第 1 枚</span>
+      </div>
+
+      {/* 竖排仪式 */}
+      <div style={{ display: 'flex', gap: 20, marginTop: 34 }}>
+        <p style={{ writingMode: 'vertical-rl', fontFamily: zjSerif, fontSize: 15, color: zj.cinnabar, letterSpacing: '0.3em', lineHeight: 1.9 }}>
+          三十日前的你
+        </p>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 10, color: zj.inkDim }}>2026 年 7 月 10 日 · 镜子时刻</p>
+          <p style={{ fontFamily: zjSerif, fontSize: 17, color: zj.ink, lineHeight: 2, marginTop: 12 }}>
+            「我觉得自己一直在假装忙碌，其实什么都没做成。很怕 30 岁回头看，什么都没有。」
+          </p>
+          <p style={{ fontSize: 10, color: zj.inkDim, marginTop: 12 }}>—— 那晚你刷到 1 点半</p>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 22, padding: '15px 16px', background: zj.cinnabarSoft, borderRadius: 12 }}>
+        <p style={{ fontSize: 10, color: zj.cinnabar }}>现在的你，想对 TA 说：</p>
+        <p style={{ fontFamily: zjSerif, fontSize: 15, color: zj.ink, lineHeight: 1.9, marginTop: 10 }}>
+          「其实你已经连续照见 23 天了。这算不算，没有假装？」
+        </p>
+      </div>
+
+      <p style={{ marginTop: 26, fontSize: 11, color: zj.inkDim, textAlign: 'center', lineHeight: 1.9, paddingBottom: 30 }}>
+        每 30 天，你会收到一枚胶囊。<br/>时间会把「现在的你」变成「将来的你」的证明。
+      </p>
+    </div>
+  );
+}
+
+/* ============================================================
+   Flow：可点击状态机
+   ============================================================ */
+function AppPhone() {
+  const [screen, setScreen] = React.useState('home');
+  const [modal, setModal] = React.useState(null);
+
+  let content;
+  if (screen === 'home') content = (
+    <HomeScreen
+      onMirror={() => setScreen('mirror')}
+      onReport={() => setScreen('report')}
+      onIntercept={() => setModal('intercept')}
+      onTask={() => setScreen('task')}
+      onLibrary={() => setScreen('library')}
+    />
+  );
+  else if (screen === 'mirror') content = <MirrorScreen onBack={() => setScreen('home')} />;
+  else if (screen === 'task') content = <DayTaskScreen onBack={() => setScreen('home')} onLibrary={() => setScreen('library')} />;
+  else if (screen === 'library') content = <LibraryScreen onBack={() => setScreen('home')} onTask={() => setScreen('task')} />;
+  else if (screen === 'report') content = <ReportScreen onBack={() => setScreen('home')} onCapsule={() => setScreen('capsule')} />;
+  else if (screen === 'capsule') content = <CapsuleScreen onBack={() => setScreen('report')} />;
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <IosFrame>
+        {content}
+        {modal === 'intercept' && (
+          <InterceptScreen
+            onEscape={() => { setModal(null); setScreen('mirror'); }}
+            onPass={() => setModal(null)}
+          />
+        )}
+      </IosFrame>
+    </div>
+  );
+}
+
+/* ============================================================
+   Overview：所有屏并排
+   ============================================================ */
+function Overview() {
+  const screens = [
+    { label: '01 主界面 · 导师问候', comp: <HomeScreen />, tag: '首屏' },
+    { label: '02 镜子时刻 · 日省', comp: <MirrorScreen />, tag: '核心' },
+    { label: '03 今日日课 · 盖章', comp: <DayTaskScreen />, tag: '核心' },
+    { label: '04 我的藏 · 手札', comp: <LibraryScreen />, tag: '核心' },
+    { label: '05 拦截时刻', comp: <InterceptScreen />, tag: '' },
+    { label: '06 对账周报 · 灰 vs 朱砂', comp: <ReportScreen />, tag: '留存' },
+    { label: '07 时间胶囊 · 竖排', comp: <CapsuleScreen />, tag: '盼头' },
+  ];
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, alignItems: 'flex-start', justifyContent: 'center' }}>
+      {screens.map(s => (
+        <div key={s.label}>
+          <div className="screen-label">
+            {s.label}
+            {s.tag && <span className="tag">{s.tag}</span>}
+          </div>
+          <IosFrame>{s.comp}</IosFrame>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ============================================================
+   挂载
+   ============================================================ */
+function App({ mode }) {
+  React.useEffect(() => {
+    document.querySelectorAll('.mode-switch button').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+  }, [mode]);
+  return (
+    <div>
+      {mode === 'overview' ? (
+        <div className="canvas overview">
+          <div className="hint">
+            数字文房 v2 · 暖白纸感 + 墨色文字 + 朱砂印章（唯一彩色）。<br/>7 屏：<b>导师问候 → 镜子时刻 → 今日日课（盖章）→ 我的藏 → 拦截 → 对账周报 → 时间胶囊（竖排）</b>。
+          </div>
+          <Overview />
+        </div>
+      ) : (
+        <div className="canvas flow">
+          <div className="hint">
+            可点击流程：<b>今日日课</b>（输入 → 盖章「完」）→ 返回 → <b>我的藏</b> → <b>镜子时刻</b> → 返回 → 演示打开抖音 → <b>拦截</b>（逃避回镜子）→ <b>对账周报</b> → <b>时间胶囊</b>。
+          </div>
+          <div className="flow-wrap"><AppPhone /></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function switchMode(m) {
+  window.__mode = m;
+  renderApp();
+}
+let zhaojianRoot = null;
+function renderApp() {
+  const mode = window.__mode || 'overview';
+  if (!zhaojianRoot) zhaojianRoot = ReactDOM.createRoot(document.getElementById('stage'));
+  zhaojianRoot.render(<App mode={mode} />);
+}
+window.__mode = 'overview';
+renderApp();
+</script>
+</body>
+</html>
