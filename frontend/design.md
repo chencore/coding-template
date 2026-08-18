@@ -215,3 +215,54 @@ Do not create decorative gradients, nested cards, or one-off visual values.
 - [ ] Keyboard access and accessible names are handled
 - [ ] Screenshot or visual verification is provided, or not applicable with reason
 ```
+
+---
+
+# 照见产品视觉：数字文房（覆盖上文模板默认值）
+
+> 以下来自 `docs/照见-App原型-v2.html`，是照见 App 的正式视觉规范；与上文模板 SaaS 默认值冲突时**以本节为准**。Flutter 实现在 `frontend/lib/theme.dart`（`Zj` token 类），界面取值一律走 token，禁止散值。
+
+## 气质
+
+「数字文房」：暖白纸感、墨色文字、朱砂一点。安静、留白多、无卡片堆叠、无阴影装饰。分割线用极细 hairline，不用色块分区。
+
+## 色板
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `Zj.paper` | `#FAF9F6` | 页面底色（暖白纸面） |
+| `Zj.ink` | `#2A2A28` | 主墨色：标题、问句、正文 |
+| `Zj.inkSoft` | `#5C574E` | 次墨色：次级正文 |
+| `Zj.inkDim` | `#8A857C` | 淡墨：元信息、辅助说明 |
+| `Zj.hairline` | `#E6E1D6` | 极细分割线、输入框边 |
+| `Zj.border` | `#CFC9BC` | 边框（胶囊标签、焦点边） |
+| `Zj.cinnabar` | `#B03A2E` | 朱砂：**唯一彩色**，仅用于主按钮、导师署名、关键强调 |
+| `Zj.cinnabarSoft` | `#B03A2E @ 8%` | 朱砂浅底（轻强调区块，如导师回应卡） |
+
+规则：朱砂克制使用，一屏至多 2 处；不引新彩色；无深色模式（V1）。
+
+## 字体
+
+- **衬线**（`Zj.serif()`）：问句、用户回答、引文等「文」内容。族序 `Songti SC → Noto Serif CJK SC → SimSun → serif`
+- **无衬线**（默认）：UI 控件、按钮、输入框、元信息
+
+| 字级 | px | 用途 |
+|------|----|------|
+| `fsMeta` | 10 | 元信息（导师署名、日期、历史标注），字距 +0.14em |
+| `fsHint` | 11 | 轻提示（如「说真话。只有你自己听得到。」） |
+| `fsUi` | 12 | 小控件（退出、档案入口） |
+| `fsBody` | 14 | 正文、输入框、按钮 |
+| `fsAnswer` | 15 | 用户回答（衬线，行高 1.7） |
+| `fsQuestion` | 21 | 镜子问句（衬线，行高 1.9） |
+
+## 关键组件（以原型 v2 为准）
+
+- **镜子问句**：衬线 21px、墨色、行高 1.9，以「」包裹；上方 10px 朱砂「默 · 你的导师」署名；下方 11px 淡墨提示
+- **主按钮**：朱砂底、纸色字、圆角 12、14px/600（`ZjPrimaryButton`）；loading 换同尺寸 spinner，宽度不抖
+- **输入框**：白底、hairline 边、圆角 12、13/14 内边距
+- **历史/回顾条目**：10px 淡墨元信息行 + 15px 衬线「回答」，条目间 hairline 分隔，无卡片
+- **页面留白**：左右 26px，问句区上边距 44px
+
+## 文案语气
+
+克制、温和、不评判。不说教、不用感叹号轰炸、不贩卖焦虑。提示语示例：「说真话。只有你自己听得到。」
