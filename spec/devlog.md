@@ -31,6 +31,24 @@
 
 <!-- 最新条目在最上面 -->
 
+### 2026-08-18 · bootstrap-app-scaffold（父分支：version/v1.0）
+
+**摘要**：照见全栈骨架落地——NestJS 后端（/api/health db 探针 + /api/health/llm 火山方舟三态探针）、Flutter 前端（iOS+Android 工程、健康状态启动页）、docker-compose 本地 postgres:16+pgvector、GitHub Actions 双 job CI。spec 场景 1~11 全部实跑验证通过（场景 8 经 Android 模拟器，Xcode 未装）。
+
+**关键决策**：
+- 模板示例代码（server.js/tasks.js/app.js 等）删除，README 第 3 节改写为真实项目本地开发指引
+- 执行期修正×3：①Docker Hub/容器 apt 网络受阻→本地构建 pgvector 镜像（宿主机代理 build-arg）②Xcode 缺失→开放 Android 平台作开发验证目标（首发仍仅 iOS）③LLM 实际用方舟 Coding Plan（base URL `.../api/coding/v1`，model 填模型名）
+
+**踩坑 / 经验**：
+- tsx/esbuild 不保证 emitDecoratorMetadata，NestJS 按类型注入静默失效——**约定：所有构造器注入显式 @Inject()**
+- vitest 两坑：mock 工厂里 class+参数属性、mockResolvedValue 后 mockReset 再 reject，都会把已 catch 的 rejection 误报 unhandled——用 vi.fn() 构造器 + Once 变体
+- macOS 无 pwsh/cmd，validate-template 用 python 等价复刻校验（hardness + ui 均通过）
+
+**相关产出**：
+- 归档位置：`openspec/changes/archive/2026-08-18-bootstrap-app-scaffold/`
+- CI run：32099389370（backend/frontend 均 success）
+- 遗留：iOS 模拟器验证待 Xcode 安装后补；validate-template 的 macOS 原生支持可另开变更
+
 ### 2026-08-17 · 版本 v1.0 首次 kickoff · 由 CK 追加：新增 R-v1.0-CK-1~12
 
 **摘要**：基于 `docs/照见-PRD-v1.md` 完成项目首次 kickoff——`spec/requirements.md` 写入 12 条 Must Have 需求（含非目标/Future/成功标准），`spec/tasks.md` 拆出 M1~M4 共 15 条任务，`spec/design.md` 初始化架构方向。

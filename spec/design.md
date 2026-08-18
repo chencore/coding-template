@@ -8,12 +8,14 @@
 
 | 层 | 选型 | 理由 |
 |----|------|------|
-| 前端 | 跨端框架（Flutter / RN，具体选型待定），仅 iOS 首发 | 个人开发者一套代码留多端的余地；MVP 只落地 iOS |
+| 前端 | Flutter（stable），仅 iOS 首发；工程含 Android 平台（仅开发验证目标，2026-08-18 bootstrap 提升） | 个人开发者一套代码留多端的余地；MVP 只落地 iOS |
 | 前端原生模块 | iOS 原生（Swift）：拦截时刻（Screen Time API / 辅助功能） | 跨端框架无法直接提供该能力，审核风险需原生方案早验证 |
-| 后端 | 待定 | 首个变更（bootstrap-app-scaffold）的 design 阶段选型 |
-| 数据库 | 待定 | 同上 |
-| LLM | 国内大模型（火山方舟 / DeepSeek / 通义，具体待定） | 国内可直连、合规风险低；与 PRD 中火山方舟 ASR 提法一致 |
-| 部署 | 待定 | 同上 |
+| 后端 | NestJS + TypeScript（2026-08-18 bootstrap 提升） | TS 全栈心智负担最低，模块化结构贴合模块划分 |
+| 数据库 | PostgreSQL 16 + pgvector（docker-compose 本地构建镜像：`FROM postgres:16` + apt 装 pgvector，2026-08-18 bootstrap 提升） | 关系数据 + 向量检索一库两用；本地构建规避 Docker Hub 拉取受限 |
+| LLM | 火山方舟 **Coding Plan**（OpenAI 兼容端点 `.../api/coding/v1`，当前模型 glm-5.2，2026-08-18 bootstrap 提升） | 国内可直连、合规低、套餐成本固定；供应商可替换（换 base URL + model 即可） |
+| 部署 | 待定 | M4 `setup-production-deployment` 定 |
+
+**后端通用约束（2026-08-18 bootstrap 提升）**：dev 用 tsx（esbuild）运行，不保证 `emitDecoratorMetadata`——**所有 NestJS 构造器注入必须显式写 `@Inject()`**，不得依赖按类型注入。
 
 ## 2. 系统架构
 
@@ -86,10 +88,11 @@
 
 ## 7. 待定项（Open Questions）
 
-- Flutter 还是 RN（M1 bootstrap 变更前拍板）
-- 后端技术栈与数据库选型（M1 bootstrap 变更的 design 阶段）
-- 国内 LLM 具体供应商与模型（成本/效果实测后定）
+- ~~Flutter 还是 RN~~ → 已定 Flutter（2026-08-18 bootstrap）
+- ~~后端技术栈与数据库选型~~ → 已定 NestJS + Postgres/pgvector（2026-08-18 bootstrap）
+- ~~国内 LLM 具体供应商~~ → 已定火山方舟 Coding Plan（glm-5.2），供应商可替换设计（2026-08-18 bootstrap）
 - iOS 拦截走 Screen Time API 还是辅助功能（M3 前必须有结论，影响审核）
 - 语音回答 ASR/TTS 选型（语音版本启动前）
 - 产品定名「照见」/「返真」/「本我」（内容启动前）
 - 订阅定价 39/月 是否合适（MVP 验证后回顾）
+- Xcode 未安装，iOS 模拟器验证待补（环境问题，非设计问题）

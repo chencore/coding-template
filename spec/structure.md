@@ -20,7 +20,9 @@
 │   └── specs/           # 从变更提炼的长期规格
 ├── examples/            # Agent 可复制的标准样例
 ├── validation/          # 轻量验证脚本
-├── docs/                # 文档资源（README 引用的图片/二维码等）
+├── docs/                # 文档资源（PRD、原型稿、图片等）
+├── docker/              # 本地开发容器（db：postgres:16 + pgvector）
+├── .github/             # GitHub Actions CI
 ├── .claude/             # Claude Code 配置与技能
 ├── .codebuddy/          # CodeBuddy 配置（可选）
 ├── CLAUDE.md            # Claude Code 工作指引
