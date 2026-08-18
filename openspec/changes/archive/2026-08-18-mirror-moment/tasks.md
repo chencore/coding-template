@@ -50,25 +50,25 @@
 
 ## 7. 收尾
 
-- [ ] 7.1 `code-review` 自查
-- [ ] 7.2 `spec/tasks.md` 勾选 mirror-moment
-- [ ] 7.3 运行 validate-template 等价校验并 `/opsx:archive` 归档（macOS 用 python 等价复刻）
+- [x] 7.1（code-review 技能仅限用户调用，已做人工自查）`code-review` 自查
+- [x] 7.2 `spec/tasks.md` 勾选 mirror-moment
+- [x] 7.3 运行 validate-template 等价校验并 `/opsx:archive` 归档（macOS 用 python 等价复刻）
 - [ ] 7.4 合并回 `version/v1.0`，`spec/devlog.md` 追加记录（注明父分支）
 
 ## UI Check
 
-- [ ] UI complexity level selected: M（两个新页面 + 主题 token，无新交互范式）
-- [ ] Existing pattern/component is reused, or new pattern is documented（沿用骨架页三态处理模式；数字文房视觉节写入 frontend/design.md）
-- [ ] Visual values use tokens or established style variables（全部走 theme.dart token，无散值）
-- [ ] Required states are covered: loading / empty / error / disabled（两页均覆盖）
-- [ ] Keyboard access and accessible names are handled（输入框 label/按钮语义命名）
-- [ ] Screenshot or visual verification is provided（screenshots/ 目录 + 对照原型核对）
+- [x] UI complexity level selected: M（两个新页面 + 主题 token，无新交互范式）
+- [x] Existing pattern/component is reused, or new pattern is documented（沿用骨架页三态处理模式；数字文房视觉节写入 frontend/design.md）
+- [x] Visual values use tokens or established style variables（全部走 theme.dart token，无散值）
+- [x] Required states are covered: loading / empty / error / disabled（两页均覆盖）
+- [x] Keyboard access and accessible names are handled（输入框 label/按钮语义命名）
+- [x] Screenshot or visual verification is provided（screenshots/ 目录 + 对照原型核对）
 
 ## Hardness Check
 
 - [x] Complexity level selected: L（数据模型变更 + 跨模块 + 新机制）
-- [ ] Boundary is clear; no cross-module internal access（DatabaseModule 共享 Pool，其余各模块走自己 repository；QuestionGenerator 散装出口已写明收口约定）
-- [ ] Failure behavior is handled or explicitly not applicable（LLM 失败兜底 / 迁移失败中止 / 缺设备头 400 / 回答校验 400）
-- [ ] Core path and important failure path are verified（单测 + 场景 1~15 集成/视觉验证）
-- [ ] Logs/metrics cover important behavior without leaking sensitive data（不记回答正文、不记密钥，design.md §可观测性）
-- [ ] Rollback path is documented, or not applicable with reason（design.md §回滚：revert，表保留不删）
+- [x] Boundary is clear; no cross-module internal access（DatabaseModule 共享 Pool，其余各模块走自己 repository；QuestionGenerator 散装出口已写明收口约定）
+- [x] Failure behavior is handled or explicitly not applicable（LLM 失败兜底 / 迁移失败中止 / 缺设备头 400 / 回答校验 400）
+- [x] Core path and important failure path are verified（单测 + 场景 1~15 集成/视觉验证）
+- [x] Logs/metrics cover important behavior without leaking sensitive data（不记回答正文、不记密钥，design.md §可观测性）
+- [x] Rollback path is documented, or not applicable with reason（design.md §回滚：revert，表保留不删）

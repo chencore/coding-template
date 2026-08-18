@@ -8,7 +8,7 @@
 
 | 层 | 选型 | 理由 |
 |----|------|------|
-| 前端 | Flutter（stable），仅 iOS 首发；工程含 Android 平台（仅开发验证目标，2026-08-18 bootstrap 提升） | 个人开发者一套代码留多端的余地；MVP 只落地 iOS |
+| 前端 | Flutter（stable），仅 iOS 首发；工程含 Android 平台（仅开发验证目标，2026-08-18 bootstrap 提升）；依赖：http、shared_preferences（设备 ID 持久化，2026-08-18 mirror-moment 提升） | 个人开发者一套代码留多端的余地；MVP 只落地 iOS |
 | 前端原生模块 | iOS 原生（Swift）：拦截时刻（Screen Time API / 辅助功能） | 跨端框架无法直接提供该能力，审核风险需原生方案早验证 |
 | 后端 | NestJS + TypeScript（2026-08-18 bootstrap 提升） | TS 全栈心智负担最低，模块化结构贴合模块划分 |
 | 数据库 | PostgreSQL 16 + pgvector（docker-compose 本地构建镜像：`FROM postgres:16` + apt 装 pgvector，2026-08-18 bootstrap 提升） | 关系数据 + 向量检索一库两用；本地构建规避 Docker Hub 拉取受限 |
@@ -16,6 +16,14 @@
 | 部署 | 待定 | M4 `setup-production-deployment` 定 |
 
 **后端通用约束（2026-08-18 bootstrap 提升）**：dev 用 tsx（esbuild）运行，不保证 `emitDecoratorMetadata`——**所有 NestJS 构造器注入必须显式写 `@Inject()`**，不得依赖按类型注入。
+
+**LLM 调用约束（2026-08-18 mirror-moment 提升）**：glm 推理模型不显式关思考会把 `max_tokens` 耗尽于 reasoning、`content` 返回空（finish_reason=length）——**所有 chat completion 请求必须带 `thinking: {"type": "disabled"}`（方舟扩展字段）**，除非确需推理。
+
+**数据访问与迁移（2026-08-18 mirror-moment 提升）**：裸 pg + SQL 顺序迁移，不引 ORM。共享 `DatabaseModule`（全局单例 Pool），迁移文件 `backend/migrations/*.sql` 启动时比对 `schema_migrations` 表自动执行，任一失败即启动失败（不半迁移运行）。后续变更默认沿用；表数量 >6 或关联复杂化时再评估 Prisma。
+
+**用户标识（2026-08-18 mirror-moment 提升）**：匿名设备 ID——业务 API 走 `DeviceIdMiddleware` 读 `X-Device-Id` 头，懒建 `users` 行；缺头 400。换设备/重装即新身份是已知局限，账号绑定留给后续变更（加 `user_identities` 关联即可）。
+
+**日期口径（2026-08-18 mirror-moment 提升）**：业务日历日固定 Asia/Shanghai（UTC+8），应用层计算后写入（`backend/src/common/shanghai-date.ts`），不读设备时区；pg DATE 类型不做 JS Date 转换（typeParser 保持字符串）。
 
 ## 2. 系统架构
 
@@ -41,16 +49,18 @@
 
 ## 4. 数据模型（核心实体）
 
-> 首个变更的 design 阶段细化，此处仅列预期核心实体。
+> 已落地表结构以 `backend/migrations/*.sql` 为准（2026-08-18 mirror-moment 起）。
 
-### User
-- `id`, 导师人格配置（名字/风格）, 订阅状态, `created_at`, ...
+### User（已落地，2026-08-18）
+- `id BIGSERIAL`, `device_id VARCHAR(64) UNIQUE`（匿名设备标识）, `created_at`
+- 待补：导师人格配置、订阅状态、账号绑定（`user_identities`）
+
+### MirrorEntry（声音档案，已落地，2026-08-18）
+- `user_id` FK, `entry_date DATE`（Asia/Shanghai 日历日）, `question`, `question_source('llm'|'bank')`, `answer NULL=未回答`, `answered_at`
+- `UNIQUE(user_id, entry_date)`——一天一问题一回答，当天可改
 
 ### MentorMemory（导师记忆）
 - 用户回答、日课完成度、收藏、情绪变化——产品的数据护城河
-
-### MirrorEntry（声音档案）
-- 每日问题、文字回答、时间戳
 
 ### CangItem（藏）
 - 收藏的句子/顿悟、主题标签、来源
