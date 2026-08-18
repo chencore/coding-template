@@ -32,13 +32,13 @@
 - [x] 4.1 `.github/workflows/ci.yml`：backend job（Node 版本固定，lint+test）、frontend job（subosito/flutter-action，analyze+test）
 - [x] 4.2 集成验证：场景 3~7——health 与 llm 探针的 200/503 各分支实跑一遍（db 起/停、密钥有/无）
 - [x] 4.3 集成验证：场景 8——App 连本地后端展示健康状态 ✅（**改经 Android 模拟器验证**：Xcode 未装，用户指示先开放安卓；Pixel 7 API 36 模拟器截图确认「后端连通正常」。iOS 模拟器验证待 Xcode 安装后补）
-- [ ] 4.4 集成验证：场景 10~11——push 后 CI 双 job 绿灯
+- [x] 4.4 集成验证：场景 10~11——push 后 CI 双 job 绿灯（run 32099389370：backend/frontend 均 success）
 - [x] 4.5 根 README 更新本地启动步骤；`spec/structure.md` 若有顶层目录变化则同步
 
 ## 5. 收尾
 
-- [ ] 5.1 `spec/tasks.md` 勾选 `bootstrap-app-scaffold`
-- [ ] 5.2 `spec/devlog.md` 追加变更记录
+- [x] 5.1 `spec/tasks.md` 勾选 `bootstrap-app-scaffold`
+- [x] 5.2 `spec/devlog.md` 追加变更记录
 - [ ] 5.3 运行 `.\validation\validate-template.cmd` 并 `/opsx:archive` 归档
 
 ## Hardness Check
