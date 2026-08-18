@@ -23,7 +23,7 @@
 ### M1 · 核心闭环（镜子 + 导师 + 藏）
 
 - [x] **bootstrap-app-scaffold** — 初始化前端（跨端栈）+ 后端骨架、CI、环境变量、国内 LLM 接入验证
-- [ ] **mirror-moment** — 镜子时刻：每日一问、文字回答、声音档案存储（R-v1.0-CK-1）
+- [x] **mirror-moment** — 镜子时刻：每日一问、文字回答、声音档案存储（R-v1.0-CK-1）
 - [ ] **ai-mentor-core** — 导师人格：命名/风格选择、统一 AI 出口、用户记忆（R-v1.0-CK-2）
 - [ ] **renwen-mentors** — 人文导师团：历史人物视角回应 + 出处标注（R-v1.0-CK-3）
 - [ ] **cang-knowledge-base** — 藏：一键收藏、思想地图主题聚类、回看（R-v1.0-CK-4）
