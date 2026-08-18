@@ -31,6 +31,28 @@
 
 <!-- 最新条目在最上面 -->
 
+### 2026-08-18 · mirror-moment（父分支：version/v1.0）
+
+**摘要**：镜子时刻落地——每日一问（LLM 个性化 + 14 条问题库兜底）、文字回答（当天可改）、声音档案分页回看。后端首批业务表（users / mirror_entries + SQL 迁移机制）、X-Device-Id 懒建用户；前端数字文房 theme token + 镜子时刻/声音档案两页，App 入口从骨架页切换。spec 场景 1~15 全部验证（后端 curl 实跑 + Android 模拟器截图 5 张），CI run 32153059097 绿灯。
+
+**关键决策**：
+- 裸 pg + `backend/migrations/*.sql` 顺序迁移（启动自动执行、失败即启动失败），不引 ORM——后续变更默认沿用的先例
+- X-Device-Id 匿名设备标识 + 懒建 users；换设备即新身份是已知局限，绑定留后续
+- 每日问题：有近 7 天回答 → LLM 生成（≤40 字单问句校验），任何失败落问题库兜底，用户无感；问题落库当天幂等
+- 回答只记录无即时回应；当天重复提交为幂等更新（201/200）
+- QuestionGenerator 是临时散装 LLM 出口——ai-mentor-core 的 tasks 必含「收口 QuestionGenerator」
+
+**踩坑 / 经验**：
+- glm-5.2 是推理模型：不显式 `thinking:{type:disabled}` 会把 max_tokens 烧在 reasoning 上、content 返回空（finish_reason=length）——已写入 spec/design.md 通用约束
+- Flutter 文字稿 setState(() => future) 箭头闭包返回 Future 会炸——一律用块体
+- Android 模拟器无衬线 CJK 字体，「数字文房」衬线回退无衬线；iOS（首发目标）有 Songti SC，差异记录在 screenshots/README.md
+- 遗留：已回答态 UI 暂不支持修改当天回答（API 已支持 200 更新，UI 入口留待导师变更）；`docs/硬件-默窗-概念与众筹文案.md` 为人工新增文档，未随本变更提交
+
+**相关产出**：
+- 归档位置：`openspec/changes/archive/2026-08-18-mirror-moment/`
+- 主规格：`openspec/specs/mirror/spec.md`；design 提升：迁移机制 / 用户标识 / 日期口径 / glm thinking 约束 / shared_preferences 依赖
+- CI run：32153059097（success）
+
 ### 2026-08-18 · bootstrap-app-scaffold（父分支：version/v1.0）
 
 **摘要**：照见全栈骨架落地——NestJS 后端（/api/health db 探针 + /api/health/llm 火山方舟三态探针）、Flutter 前端（iOS+Android 工程、健康状态启动页）、docker-compose 本地 postgres:16+pgvector、GitHub Actions 双 job CI。spec 场景 1~11 全部实跑验证通过（场景 8 经 Android 模拟器，Xcode 未装）。
