@@ -41,6 +41,8 @@
 
 **理由**：kickoff 结论——与后续语音版 ASR 同源。OpenAI 兼容模式意味着换供应商（DeepSeek/通义）只改 base URL 和模型 ID，**供应商可替换性是本设计的显式目标**。
 
+**执行期修正（2026-08-18）**：用户实际使用方舟 Coding Plan 套餐——base URL 为 `.../api/coding/v1`、model 直接填模型名（如 glm-5.2），无需创建推理接入点。标准接入与 Coding Plan 两种配置已写入 `.env.example` 注释。场景 5 已用 Coding Plan 验证 `up`（~2.4s）。
+
 **放弃的方案**：直接集成多家 SDK——过度设计，M1 只需一家跑通。
 
 ### 5. 密钥与配置管理
