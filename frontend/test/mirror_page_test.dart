@@ -54,7 +54,7 @@ void main() {
   group("镜子时刻页", () {
     testWidgets("未回答态：问句/导师署名/昨日回顾/输入与说完按钮", (tester) async {
       final api = FakeApi()..todayResult = unansweredToday;
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
       await tester.pumpAndSettle();
 
       expect(find.text("默 · 你的导师"), findsOneWidget);
@@ -69,7 +69,7 @@ void main() {
       final api = FakeApi()
         ..todayResult = unansweredToday
         ..submitResult = answeredToday;
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), "橘猫蹭了我一下");
@@ -83,7 +83,7 @@ void main() {
 
     testWidgets("后端不可达：错误态 + 重试恢复", (tester) async {
       final api = FakeApi()..todayResult = const MirrorApiUnreachable();
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
       await tester.pumpAndSettle();
       expect(find.text("没连上。稍后再试。"), findsOneWidget);
 
@@ -104,13 +104,29 @@ void main() {
           mentorName: "远山",
           mentorReply: "被橘猫选中了，这是好日子。",
         );
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
       await tester.pumpAndSettle();
 
       expect(find.text("远山 · 你的导师"), findsOneWidget);
       expect(find.text("远山 · 回应"), findsOneWidget);
       expect(find.text("被橘猫选中了，这是好日子。"), findsOneWidget);
       expect(find.text("已记下。明天见。"), findsNothing);
+    });
+
+    testWidgets("人文导师团常驻入口可见，点击带出导师名字（场景 11）", (tester) async {
+      final api = FakeApi()..todayResult = unansweredToday;
+      String? passedName;
+      await tester.pumpWidget(wrap(MirrorPage(
+        api: api,
+        onOpenEntries: () {},
+        onOpenMentor: () async {},
+        onOpenRenwen: (name) => passedName = name,
+      )));
+      await tester.pumpAndSettle();
+
+      expect(find.text("迷茫时，请前人聊聊 →"), findsOneWidget);
+      await tester.tap(find.text("迷茫时，请前人聊聊 →"));
+      expect(passedName, "默");
     });
   });
 

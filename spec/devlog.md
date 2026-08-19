@@ -31,6 +31,27 @@
 
 <!-- 最新条目在最上面 -->
 
+### 2026-08-20 · renwen-mentors（父分支：version/v1.0）
+
+**摘要**：落地 R-v1.0-CK-3 人文导师团——新 renwen 模块（canon 出处库代码常量：苏格拉底/马可·奥勒留/王阳明/曾国藩 × 3~4 条真实原典；迁移 0003 `renwen_sessions`）；MentorService 新增 `renwen_reply` 场景（人物 persona 顶替导师人格、记忆照注）；召唤接口（指定人物/导师代选轮转、出处轮转、每日上限 3 次 429、LLM 失败显式 503 不落库）+ 人物列表/历史回看接口；前端镜子页常驻入口 + 召唤页（困惑输入、人物选择卡、回应卡含引荐语与出处、过往列表）。后端 84 测试、前端 28 测试全绿；场景 1~10 curl 实证（含真实 LLM 召唤、429/503/400）、11~14 模拟器截图验证。
+
+**关键决策**：
+- 注入式出处防幻觉：出处从「生成物」变「选择物」——先选 canon 条目注入 prompt，标注用库内篇名，LLM 输出的任何引文样式不作数
+- 召唤类主动作失败语义 = 显式 503 不假兜底（与导师回应 null 缺省对照：有主流程可让路才允许缺省）
+- 人物代选/出处轮转 = 累计召唤数取模（确定性、可测试，不引入 LLM 代选与随机）
+- 同人物相邻条目篇名不重复（canon 测试钉住）——轮转时用户看到的出处必换；王阳明两条《传习录》细分到徐爱录/钱德洪录
+
+**踩坑 / 经验**：
+- ListView 懒加载：widget 测试对视口外按钮/区块须先 `scrollUntilVisible` 再断言/点击
+- 自查发现：召唤成功后「过往」列表不刷新（首屏快照）——成功后重拉 sessions 修复；async 间隙的 setState 全部补 mounted 守卫
+- 已接受 V1 风险：每日上限的计数-写入并发窗口（单人设备最坏当日多召唤一次，成本风险，不加锁）
+- 本机累积多个历史 `tsx watch` 进程会守护重启占用 3000——做 503 降级验证前须先 pkill 干净
+
+**相关产出**：
+- 归档位置：`openspec/changes/archive/2026-08-20-renwen-mentors/`
+- spec/design.md 提升：人文导师团约束（注入式出处防幻觉 + 召唤失败语义）、RenwenSession 数据模型行、日期口径补 `shanghaiDayStartMs`、模块划分加 renwen
+- 主规格同步：`openspec/specs/renwen/spec.md`（14 场景，新建）
+
 ### 2026-08-19 · ai-mentor-core（父分支：version/v1.0）
 
 **摘要**：落地 R-v1.0-CK-2 导师核心——users 加 mentor_name/mentor_style（迁移 0002），新建 mentor 模块作为唯一 LLM 网关（MentorService 场景化：人格+记忆注入、按场景降级），收口并删除 mirror 的散装 QuestionGenerator；新增导师回应（≤60 字不追问，失败缺省 null）与 `GET/PUT /api/mentor/profile`；前端导师设置页（改名/切风格）+ 回应卡 + 动态署名。后端 51 测试、前端 21 测试全绿；场景 1~13 curl 实证、14~16 模拟器截图验证。

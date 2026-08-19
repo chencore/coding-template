@@ -1,12 +1,13 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { LlmClient, LlmNotConfigured } from "./llm.client";
 import { MEMORY_PROVIDER, type MemoryProvider } from "./memory";
-import { buildSystemPrompt } from "./persona";
+import { buildFigureSystemPrompt, buildSystemPrompt } from "./persona";
 import { pickBankQuestion } from "./question-bank";
 import { UsersRepository } from "../users/users.repository";
 
 const MAX_QUESTION_LEN = 40;
 const MAX_REPLY_LEN = 60;
+const MAX_RENWEN_REPLY_LEN = 200;
 
 export interface GeneratedQuestion {
   question: string;
@@ -28,7 +29,23 @@ const SCENE_RULES = {
 - 只输出一句回应，不超过 60 字
 - 不追问（不以问号结尾），不复述用户的原话
 - 承接 > 建议；像深夜里回的一句话`,
+  renwen_reply: `场景：用户迷茫时请到了你。请结合注入的那条你的思想，回应用户当下的处境。
+- 输出一段回应，不超过 200 字
+- 允许追问（提问式人物可以用问句结尾）
+- 不要直接照抄出处原文，把那条思想说到用户的处境上
+- 只输出回应正文`,
 } as const;
+
+/** renwen 场景失败原因：日志与 503 判定用，不含用户内容 */
+export type RenwenFailReason = "not_configured" | "llm_error" | "invalid_output";
+
+/** 人文导师团场景失败：统一抛出，由调用方（renwen 模块）映射 503（决策 5：召唤是主动作，不做假兜底） */
+export class RenwenReplyFailed extends Error {
+  constructor(public readonly reason: RenwenFailReason) {
+    super(`renwen_reply failed: ${reason}`);
+    this.name = "RenwenReplyFailed";
+  }
+}
 
 /**
  * 导师服务：所有 AI 出口的统一网关（design.md 决策 2）。
@@ -105,6 +122,52 @@ export class MentorService {
     }
   }
 
+  /**
+   * 场景：人文导师团回应（≤200 字、允许追问）。
+   * 出处条目不经过 LLM 生成——由调用方选定后注入，标注用库内篇名（决策 2）。
+   * 任何失败都抛 RenwenReplyFailed（不落库、不兜底），由 renwen 模块映射 503（决策 5）。
+   */
+  async askRenwenReply(
+    userId: number,
+    payload: {
+      figurePersona: string;
+      figureName: string;
+      source: { title: string; text: string };
+      confusion: string | null;
+    },
+  ): Promise<string> {
+    const memory = await this.memory.recall(userId);
+    const startedAt = Date.now();
+    const memoryBlock = memory ? `用户最近的镜子回答：\n${memory}\n` : "";
+    const confusionLine = payload.confusion
+      ? `用户当下的困惑：${payload.confusion}`
+      : "用户没有写下具体困惑，请从用户最近的表达出发（若没有表达，就从当下普遍的迷茫出发）。";
+
+    try {
+      const raw = await this.llm.chat(
+        buildFigureSystemPrompt(payload.figurePersona, SCENE_RULES.renwen_reply),
+        `${memoryBlock}${confusionLine}\n你的这条思想与此相关：${payload.source.title}——「${payload.source.text}」\n请以${payload.figureName}的身份回应用户。`,
+        800,
+      );
+      const reply = validateRenwenReply(raw);
+      if (!reply) {
+        this.logger.warn(
+          `ask renwen_reply: invalid_output (${Date.now() - startedAt}ms)`,
+        );
+        throw new RenwenReplyFailed("invalid_output");
+      }
+      this.logger.log(`ask renwen_reply: llm ok (${Date.now() - startedAt}ms)`);
+      return reply;
+    } catch (err) {
+      if (err instanceof RenwenReplyFailed) throw err;
+      // 只记错误类别与耗时；不记请求/响应内容（含用户困惑与记忆）
+      const reason: RenwenFailReason =
+        err instanceof LlmNotConfigured ? "not_configured" : "llm_error";
+      this.logger.warn(`ask renwen_reply: ${reason} (${Date.now() - startedAt}ms)`);
+      throw new RenwenReplyFailed(reason);
+    }
+  }
+
   private bankQuestion(
     entryDate: string,
     reason: QuestionFallbackReason,
@@ -134,5 +197,12 @@ export function validateReply(raw: string): string | null {
   if (r.length === 0 || r.length > MAX_REPLY_LEN) return null;
   if (r.includes("\n")) return null;
   if (r.endsWith("？") || r.endsWith("?")) return null;
+  return r;
+}
+
+/** 人文导师回应校验：≤200 字、剥引号、允许多行与问号（苏格拉底式本来就是追问） */
+export function validateRenwenReply(raw: string): string | null {
+  const r = raw.trim().replace(/^[「"']+|[」"']+$/g, "").trim();
+  if (r.length === 0 || r.length > MAX_RENWEN_REPLY_LEN) return null;
   return r;
 }

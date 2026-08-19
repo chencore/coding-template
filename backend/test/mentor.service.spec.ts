@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { LlmNotConfigured, LlmClient } from "../src/mentor/llm.client";
-import { MentorService, validateQuestion, validateReply } from "../src/mentor/mentor.service";
+import {
+  MentorService,
+  RenwenReplyFailed,
+  validateQuestion,
+  validateRenwenReply,
+  validateReply,
+} from "../src/mentor/mentor.service";
 import type { MemoryProvider } from "../src/mentor/memory";
 import type { UsersRepository } from "../src/users/users.repository";
 
@@ -120,5 +126,79 @@ describe("validateQuestion / validateReply", () => {
     expect(validateQuestion("")).toBeNull();
     expect(validateQuestion("第一行？\n第二行？")).toBeNull();
     expect(validateReply("一行。\n二行。")).toBeNull();
+  });
+});
+
+describe("MentorService.askRenwenReply（人文导师团场景）", () => {
+  const payload = {
+    figurePersona: "你是王阳明，心学的开创者。",
+    figureName: "王阳明",
+    source: { title: "《传习录》", text: "知是行之始，行是知之成。" },
+    confusion: "想辞职又怕选错。",
+  };
+
+  it("正常：system 为人物 persona（非导师人格），user 含记忆+困惑+出处原文", async () => {
+    const { service, chat } = makeService({
+      chatImpl: async () => "事上磨练，答案在做之中。",
+      memory: "- 2026-08-18 问：q？\n  答：最近工作提不起劲\n",
+    });
+    const reply = await service.askRenwenReply(7, payload);
+    expect(reply).toBe("事上磨练，答案在做之中。");
+    const [system, user] = chat.mock.calls[0] as [string, string, number];
+    expect(system).toContain("你是王阳明");
+    expect(system).not.toContain("人生导师"); // 人物顶替导师人格位置
+    expect(user).toContain("提不起劲"); // 记忆注入
+    expect(user).toContain("想辞职又怕选错。"); // 困惑
+    expect(user).toContain("知是行之始，行是知之成。"); // 出处原文注入
+    expect(user).toContain("《传习录》");
+  });
+
+  it("困惑留空：prompt 有替代指令，不含 undefined/null", async () => {
+    const { service, chat } = makeService({
+      chatImpl: async () => "一句话。",
+    });
+    await service.askRenwenReply(7, { ...payload, confusion: null });
+    const user = chat.mock.calls[0][1] as string;
+    expect(user).toContain("没有写下具体困惑");
+    expect(user).not.toContain("null");
+  });
+
+  it("LLM 失败 / 未配置：抛 RenwenReplyFailed（由调用方映 503），不返回兜底", async () => {
+    const a = makeService({
+      chatImpl: async () => {
+        throw new Error("connect refused");
+      },
+    });
+    await expect(a.service.askRenwenReply(7, payload)).rejects.toThrow(RenwenReplyFailed);
+    const b = makeService({
+      chatImpl: async () => {
+        throw new LlmNotConfigured();
+      },
+    });
+    await expect(
+      b.service.askRenwenReply(7, payload),
+    ).rejects.toMatchObject({ reason: "not_configured" });
+  });
+
+  it("输出超 200 字：判不合格抛 RenwenReplyFailed(invalid_output)", async () => {
+    const { service } = makeService({ chatImpl: async () => "长".repeat(201) });
+    await expect(service.askRenwenReply(7, payload)).rejects.toMatchObject({
+      reason: "invalid_output",
+    });
+  });
+});
+
+describe("validateRenwenReply", () => {
+  it("剥引号；允许问号结尾与多行（苏格拉底式追问合法）", () => {
+    expect(validateRenwenReply("「你真正害怕的，是选错，还是承认自己不知道要什么？」")).toBe(
+      "你真正害怕的，是选错，还是承认自己不知道要什么？",
+    );
+    expect(validateRenwenReply("第一句。\n第二句。")).toBe("第一句。\n第二句。");
+  });
+
+  it("空 / 超 200 字不合格", () => {
+    expect(validateRenwenReply("")).toBeNull();
+    expect(validateRenwenReply("字".repeat(200))).not.toBeNull();
+    expect(validateRenwenReply("字".repeat(201))).toBeNull();
   });
 });
