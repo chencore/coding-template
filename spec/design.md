@@ -23,11 +23,13 @@
 
 **用户标识（2026-08-18 mirror-moment 提升）**：匿名设备 ID——业务 API 走 `DeviceIdMiddleware` 读 `X-Device-Id` 头，懒建 `users` 行；缺头 400。换设备/重装即新身份是已知局限，账号绑定留给后续变更（加 `user_identities` 关联即可）。
 
-**日期口径（2026-08-18 mirror-moment 提升）**：业务日历日固定 Asia/Shanghai（UTC+8），应用层计算后写入（`backend/src/common/shanghai-date.ts`），不读设备时区；pg DATE 类型不做 JS Date 转换（typeParser 保持字符串）。
+**日期口径（2026-08-18 mirror-moment 提升）**：业务日历日固定 Asia/Shanghai（UTC+8），应用层计算后写入（`backend/src/common/shanghai-date.ts`：`shanghaiToday` / `shanghaiDaysAgo` / `shanghaiDayStartMs`（当日 0 点，供「当日」计数，2026-08-20 renwen-mentors 补）），不读设备时区；pg DATE 类型不做 JS Date 转换（typeParser 保持字符串）。
 
 **AI 出口统一（2026-08-19 ai-mentor-core 提升）**：所有 LLM 调用必须经 `mentor` 模块 `MentorService` 场景化网关（人格 + 记忆注入、按场景的输出校验与降级策略），禁止场景方直接调 LLM SDK；`thinking: {"type":"disabled"}` 只出现在 `mentor/llm.client.ts`。导师记忆经全局 `MemoryModule` 的 `MEMORY_PROVIDER` 令牌注入（V1 实现 = 近 14 天原始回答注入；蒸馏落地时换实现，场景方不改）——依赖方向 MirrorModule → MentorModule，记忆反向读镜子数据故用全局模块解环。
 
 **导师回应契约（2026-08-19 ai-mentor-core 提升）**：镜子回答后的导师回应 ≤60 字、单行、不追问（不以问号结尾）、不复述用户原文；生成失败落 `null`（不阻塞主流程），前端回落固定文案。
+
+**人文导师团（2026-08-20 renwen-mentors 提升）**：召唤历史人物回应经 `MentorService` `renwen_reply` 场景发出（人物 persona 顶替导师人格段，导师退居引荐位）。**注入式出处防幻觉**：出处条目是代码常量（`backend/src/renwen/canon.ts`，随代码评审/版本化），召唤时先选定条目注入 prompt，标注一律用库内篇名——出处是选择物，不是生成物；同人物相邻条目篇名不重复（轮转时用户看到的出处必换）。**召唤类主动作的失败语义**：LLM 失败 → 显式 503 `renwen_unavailable`、不落库，不做假兜底（与导师回应的 null 缺省对照：有主流程可让路才允许缺省）。每日上限 3 次，429 先于 LLM 调用。
 
 ## 2. 系统架构
 
@@ -43,6 +45,7 @@
 
 - **mentor** — 导师人格与记忆：人格配置、风格切换、用户表达的长期记忆，所有 AI 交互的统一入口
 - **mirror** — 镜子时刻：每日一问生成、回答收集、声音档案
+- **renwen** — 人文导师团：历史人物召唤（预置出处库、每日上限、落库回看），LLM 经 mentor 网关（2026-08-20 renwen-mentors 落地）
 - **cang** — 藏：收藏、思想地图（主题聚类）
 - **lesson** — 今日日课：微行动定制与完成记录
 - **report** — 对账周报：双视角分析、历史共鸣
@@ -68,6 +71,10 @@
 ### MentorMemory（导师记忆）
 - 用户回答、日课完成度、收藏、情绪变化——产品的数据护城河
 - V1 已落地（2026-08-19）：非表结构，`MemoryProvider` 接口 + 近 14 天镜子回答原文注入（cap 3000 字）；蒸馏事实表留到 weekly-report 变更
+
+### RenwenSession（人文导师团召唤，已落地 2026-08-20）
+- `user_id` FK, `figure VARCHAR(16)`（canon 人物 id）, `confusion TEXT NULL`, `response TEXT`, `source_id`, `source_title`（库内篇名）, `created_at`
+- 只增不改：召唤即历史；每日上限 3 次按（user_id, 上海当日）计数；人物代选与出处轮转按累计召唤数取模
 
 ### CangItem（藏）
 - 收藏的句子/顿悟、主题标签、来源

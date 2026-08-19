@@ -24,3 +24,19 @@ ${STYLE_PERSONA[profile.style]}
 ${MENTOR_CODE}
 ${sceneRules}`;
 }
+
+/**
+ * 历史人物精简守则（renwen-mentors 决策 4）：
+ * 历史人物顶替导师人格位置，只保留与表达安全相关的底线。
+ */
+const FIGURE_CODE = `守则：
+- 用中文，不用 emoji
+- 不要复述用户的隐私细节
+- 不要输出任何解释、前缀或引号`;
+
+/** 人文导师团场景：人物 persona 顶替导师人格与风格段 */
+export function buildFigureSystemPrompt(figurePersona: string, sceneRules: string): string {
+  return `${figurePersona}
+${FIGURE_CODE}
+${sceneRules}`;
+}

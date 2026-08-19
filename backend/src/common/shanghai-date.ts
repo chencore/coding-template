@@ -18,3 +18,9 @@ export function shanghaiToday(now: number = Date.now()): string {
 export function shanghaiDaysAgo(days: number, now: number = Date.now()): string {
   return toShanghaiDateString(now - days * DAY_MS);
 }
+
+/** 当日 00:00（Asia/Shanghai）的 epoch ms——供「当日」口径的计数查询（renwen 每日上限） */
+export function shanghaiDayStartMs(now: number = Date.now()): number {
+  // now + 8h 对齐到上海时间轴，取整日后再减回 8h
+  return Math.floor((now + SHANGHAI_OFFSET_MS) / DAY_MS) * DAY_MS - SHANGHAI_OFFSET_MS;
+}

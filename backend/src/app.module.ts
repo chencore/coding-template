@@ -6,6 +6,7 @@ import { HealthModule } from "./health/health.module";
 import { MirrorModule } from "./mirror/mirror.module";
 import { MentorModule } from "./mentor/mentor.module";
 import { MemoryModule } from "./mentor/memory.module";
+import { RenwenModule } from "./renwen/renwen.module";
 import { DeviceIdMiddleware } from "./common/device-id.middleware";
 
 @Module({
@@ -21,6 +22,7 @@ import { DeviceIdMiddleware } from "./common/device-id.middleware";
     MentorModule,
     MirrorModule,
     MemoryModule,
+    RenwenModule,
   ],
   // 中间件带构造器依赖（UsersRepository），需在本模块上下文可解析
   providers: [DeviceIdMiddleware],
@@ -33,6 +35,7 @@ export class AppModule implements NestModule {
       .forRoutes(
         { path: "mirror/{*splat}", method: RequestMethod.ALL },
         { path: "mentor/{*splat}", method: RequestMethod.ALL },
+        { path: "renwen/{*splat}", method: RequestMethod.ALL },
       );
   }
 }

@@ -7,6 +7,8 @@ import "mentor_api.dart";
 import "mentor_settings_page.dart";
 import "mirror_api.dart";
 import "mirror_page.dart";
+import "renwen_api.dart";
+import "renwen_page.dart";
 import "theme.dart";
 
 /// 启动时通过 --dart-define=API_BASE_URL 注入后端地址
@@ -49,6 +51,7 @@ class MirrorEntryPoint extends StatelessWidget {
         }
         final api = MirrorApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
         final mentorApi = MentorApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
+        final renwenApi = RenwenApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
         return MirrorPage(
           api: api,
           onOpenEntries: () {
@@ -59,6 +62,13 @@ class MirrorEntryPoint extends StatelessWidget {
           onOpenMentor: () async {
             await Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => MentorSettingsPage(api: mentorApi)),
+            );
+          },
+          onOpenRenwen: (mentorName) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => RenwenPage(api: renwenApi, mentorName: mentorName),
+              ),
             );
           },
         );

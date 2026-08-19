@@ -11,6 +11,7 @@ class MirrorPage extends StatefulWidget {
     required this.api,
     required this.onOpenEntries,
     required this.onOpenMentor,
+    required this.onOpenRenwen,
   });
 
   final MirrorApiClient api;
@@ -18,6 +19,9 @@ class MirrorPage extends StatefulWidget {
 
   /// 打开导师设置页；返回后刷新 today（署名/风格可能已改）
   final Future<void> Function() onOpenMentor;
+
+  /// 打开人文导师团召唤页；带上导师名字（回应卡引荐语用）
+  final void Function(String mentorName) onOpenRenwen;
 
   @override
   State<MirrorPage> createState() => _MirrorPageState();
@@ -131,6 +135,16 @@ class _MirrorPageState extends State<MirrorPage> {
               const Text(
                 "说真话。只有你自己听得到。",
                 style: TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim, height: 1.7),
+              ),
+              const SizedBox(height: 10),
+              // 人文导师团常驻入口（renwen-mentors 决策 8：fsHint 淡墨，不抢眼）
+              GestureDetector(
+                onTap: () => widget.onOpenRenwen(today.mentorName),
+                child: const Text(
+                  "迷茫时，请前人聊聊 →",
+                  style: TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim, height: 1.7),
+                  semanticsLabel: "打开人文导师团召唤页",
+                ),
               ),
               if (today.yesterdayText != null) ...[
                 const SizedBox(height: 30),
