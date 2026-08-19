@@ -31,6 +31,24 @@
 
 <!-- 最新条目在最上面 -->
 
+### 2026-08-19 · ai-mentor-core（父分支：version/v1.0）
+
+**摘要**：落地 R-v1.0-CK-2 导师核心——users 加 mentor_name/mentor_style（迁移 0002），新建 mentor 模块作为唯一 LLM 网关（MentorService 场景化：人格+记忆注入、按场景降级），收口并删除 mirror 的散装 QuestionGenerator；新增导师回应（≤60 字不追问，失败缺省 null）与 `GET/PUT /api/mentor/profile`；前端导师设置页（改名/切风格）+ 回应卡 + 动态署名。后端 51 测试、前端 21 测试全绿；场景 1~13 curl 实证、14~16 模拟器截图验证。
+
+**关键决策**：
+- 人格存 users 加列（1:1 不建独立表）；记忆 V1 = 近 14 天原始回答注入 + MemoryProvider 令牌预留蒸馏
+- 模块环（Mirror→Mentor 用服务、记忆反向读 Mirror 数据）用全局 MemoryModule 解开，不用 forwardRef
+- DeviceIdMiddleware 移入 common（mentor/mirror 共用，不跨模块偷调）
+
+**踩坑 / 经验**：
+- vitest 4 下 `vi.fn().mockImplementation(箭头函数)` 不能 `new`（"is not a constructor"）——llm.probe 存量测试因此失效（HEAD 上即失败），改用 `function` 修复
+- adb input 无法输入中文，模拟器改名交互靠 widget 测试覆盖；风格切换+保存返回流程模拟器实测
+
+**相关产出**：
+- 归档位置：`openspec/changes/archive/2026-08-19-ai-mentor-core/`
+- spec/design.md 提升：AI 出口统一约束、导师回应契约、User/MirrorEntry/MentorMemory 落地行
+- 主规格同步：`openspec/specs/mentor/spec.md`（16 场景）
+
 ### 2026-08-18 · mirror-moment（父分支：version/v1.0）
 
 **摘要**：镜子时刻落地——每日一问（LLM 个性化 + 14 条问题库兜底）、文字回答（当天可改）、声音档案分页回看。后端首批业务表（users / mirror_entries + SQL 迁移机制）、X-Device-Id 懒建用户；前端数字文房 theme token + 镜子时刻/声音档案两页，App 入口从骨架页切换。spec 场景 1~15 全部验证（后端 curl 实跑 + Android 模拟器截图 5 张），CI run 32153059097 绿灯。

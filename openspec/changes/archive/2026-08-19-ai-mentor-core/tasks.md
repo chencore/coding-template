@@ -47,11 +47,11 @@
 
 - [x] 7.1 code-review 自查（skill 本会话不可调用，已人工走查：无 QuestionGenerator 残留引用；controller 非对象 body 防御补 400；模块环经全局 MemoryModule 解开；日志不含用户内容）
 - [x] 7.2 运行 `validation/validate-template.cmd` 通过
-- [ ] 7.3 `/opsx:archive` 归档；`spec/tasks.md` 勾选 ai-mentor-core；`spec/devlog.md` 追加记录
+- [x] 7.3 `/opsx:archive` 归档；`spec/tasks.md` 勾选 ai-mentor-core；`spec/devlog.md` 追加记录
 
 ## UI Check
 
-- [x] UI complexity level selected: S / M / **L→M**（新页面但纯复用现有 token/组件，定 M）
+- [x] UI complexity level selected: S / **M** / L（新页面但纯复用现有 token/组件，定 M）
 - [x] Existing pattern/component is reused, or new pattern is documented（导师回应卡/设置页选项卡为新组件，已记入 frontend/design.md「关键组件」）
 - [x] Visual values use tokens or established style variables（全部走 Zj tokens / ZjPrimaryButton）
 - [x] Required states are covered: loading / empty / error / disabled（设置页 loading/加载失败重试/保存中禁用；镜子页回应缺省回落固定文案）
