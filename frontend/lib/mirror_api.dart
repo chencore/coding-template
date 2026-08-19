@@ -13,6 +13,8 @@ class MirrorToday {
     this.answeredAt,
     this.yesterdayDate,
     this.yesterdayText,
+    this.mentorName = "默",
+    this.mentorReply,
   });
 
   final String date;
@@ -23,11 +25,18 @@ class MirrorToday {
   final String? yesterdayDate;
   final String? yesterdayText;
 
+  /// 导师名（署名「{name} · 你的导师」）；缺省「默」兜底旧版本响应
+  final String mentorName;
+
+  /// 导师回应；null = 未回答或生成失败（页面回落固定文案）
+  final String? mentorReply;
+
   bool get answered => answerText != null;
 
   factory MirrorToday.fromJson(Map<String, dynamic> json) {
     final answer = json["answer"];
     final yesterday = json["yesterday"];
+    final mentor = json["mentor"];
     return MirrorToday(
       date: json["date"] as String,
       question: json["question"] as String,
@@ -38,6 +47,9 @@ class MirrorToday {
           yesterday is Map<String, dynamic> ? yesterday["date"] as String : null,
       yesterdayText:
           yesterday is Map<String, dynamic> ? yesterday["text"] as String : null,
+      mentorName:
+          mentor is Map<String, dynamic> ? mentor["name"] as String : "默",
+      mentorReply: json["mentorReply"] as String?,
     );
   }
 }

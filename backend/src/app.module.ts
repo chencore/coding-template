@@ -4,7 +4,9 @@ import { DatabaseModule } from "./database/database.module";
 import { UsersModule } from "./users/users.module";
 import { HealthModule } from "./health/health.module";
 import { MirrorModule } from "./mirror/mirror.module";
-import { DeviceIdMiddleware } from "./mirror/device-id.middleware";
+import { MentorModule } from "./mentor/mentor.module";
+import { MemoryModule } from "./mentor/memory.module";
+import { DeviceIdMiddleware } from "./common/device-id.middleware";
 
 @Module({
   imports: [
@@ -16,7 +18,9 @@ import { DeviceIdMiddleware } from "./mirror/device-id.middleware";
     DatabaseModule,
     UsersModule,
     HealthModule,
+    MentorModule,
     MirrorModule,
+    MemoryModule,
   ],
   // 中间件带构造器依赖（UsersRepository），需在本模块上下文可解析
   providers: [DeviceIdMiddleware],
@@ -26,6 +30,9 @@ export class AppModule implements NestModule {
     // 业务接口一律要求设备标识（全局前缀 api 不参与中间件路径匹配）
     consumer
       .apply(DeviceIdMiddleware)
-      .forRoutes({ path: "mirror/{*splat}", method: RequestMethod.ALL });
+      .forRoutes(
+        { path: "mirror/{*splat}", method: RequestMethod.ALL },
+        { path: "mentor/{*splat}", method: RequestMethod.ALL },
+      );
   }
 }

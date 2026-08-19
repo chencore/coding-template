@@ -19,6 +19,7 @@ function entryRow(date: string, answer: string | null = "回答") {
     question_source: "bank",
     answer,
     answered_at: answer ? new Date("2026-08-18T02:00:00Z") : null,
+    mentor_reply: null,
   };
 }
 
@@ -74,5 +75,23 @@ describe("MirrorRepository.findEntries（声音档案分页）", () => {
     const { entries, nextBefore } = await repo.findEntries(7, "2026-08-17", 2);
     expect(entries).toHaveLength(1);
     expect(nextBefore).toBeNull();
+  });
+});
+
+describe("MirrorRepository.updateMentorReply", () => {
+  it("写入 mentor_reply 并刷新 updated_at", async () => {
+    const query = vi.fn().mockResolvedValue({ rows: [], rowCount: 1 });
+    const repo = new MirrorRepository({ pool: { query } } as unknown as Database);
+    await repo.updateMentorReply(7, "2026-08-18", "做得好。");
+    expect(String(query.mock.calls[0][0])).toContain("mentor_reply = $3");
+    expect(query.mock.calls[0][1]).toEqual([7, "2026-08-18", "做得好。"]);
+  });
+
+  it("目标条目不存在时抛错", async () => {
+    const query = vi.fn().mockResolvedValue({ rows: [], rowCount: 0 });
+    const repo = new MirrorRepository({ pool: { query } } as unknown as Database);
+    await expect(repo.updateMentorReply(7, "2026-08-18", "x")).rejects.toThrow(
+      "entry not found",
+    );
   });
 });

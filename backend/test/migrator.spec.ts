@@ -33,7 +33,7 @@ function makeClient(opts?: { failOnCall?: number }) {
 
 describe("Migrator.runPending", () => {
   it("全部迁移已跑过时跳过（返回空）", async () => {
-    const migrator = new Migrator(makeDb(["0001_init.sql"]));
+    const migrator = new Migrator(makeDb(["0001_init.sql", "0002_mentor.sql"]));
     expect(await migrator.runPending()).toEqual([]);
   });
 
@@ -41,10 +41,11 @@ describe("Migrator.runPending", () => {
     const client = makeClient();
     const migrator = new Migrator(makeDb([], client));
     const ran = await migrator.runPending();
-    expect(ran).toEqual(["0001_init.sql"]);
+    expect(ran).toEqual(["0001_init.sql", "0002_mentor.sql"]);
     const calls = client.query.mock.calls.map((c) => String(c[0]));
     expect(calls[0]).toBe("BEGIN");
     expect(calls.some((s) => s.includes("CREATE TABLE users"))).toBe(true);
+    expect(calls.some((s) => s.includes("mentor_name"))).toBe(true);
     expect(calls.some((s) => s.includes("INSERT INTO schema_migrations"))).toBe(true);
     expect(calls[calls.length - 1]).toBe("COMMIT");
     expect(client.release).toHaveBeenCalled();

@@ -10,7 +10,7 @@ import {
   Res,
 } from "@nestjs/common";
 import type { Response } from "express";
-import type { AuthedRequest } from "./device-id.middleware";
+import type { AuthedRequest } from "../common/device-id.middleware";
 import { MirrorService } from "./mirror.service";
 
 @Controller("mirror")

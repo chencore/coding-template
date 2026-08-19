@@ -3,6 +3,8 @@ import "package:flutter/material.dart";
 import "device_id.dart";
 import "entries_page.dart";
 import "health.dart";
+import "mentor_api.dart";
+import "mentor_settings_page.dart";
 import "mirror_api.dart";
 import "mirror_page.dart";
 import "theme.dart";
@@ -46,11 +48,17 @@ class MirrorEntryPoint extends StatelessWidget {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         final api = MirrorApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
+        final mentorApi = MentorApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
         return MirrorPage(
           api: api,
           onOpenEntries: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => EntriesPage(api: api)),
+            );
+          },
+          onOpenMentor: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => MentorSettingsPage(api: mentorApi)),
             );
           },
         );

@@ -25,6 +25,10 @@
 
 **日期口径（2026-08-18 mirror-moment 提升）**：业务日历日固定 Asia/Shanghai（UTC+8），应用层计算后写入（`backend/src/common/shanghai-date.ts`），不读设备时区；pg DATE 类型不做 JS Date 转换（typeParser 保持字符串）。
 
+**AI 出口统一（2026-08-19 ai-mentor-core 提升）**：所有 LLM 调用必须经 `mentor` 模块 `MentorService` 场景化网关（人格 + 记忆注入、按场景的输出校验与降级策略），禁止场景方直接调 LLM SDK；`thinking: {"type":"disabled"}` 只出现在 `mentor/llm.client.ts`。导师记忆经全局 `MemoryModule` 的 `MEMORY_PROVIDER` 令牌注入（V1 实现 = 近 14 天原始回答注入；蒸馏落地时换实现，场景方不改）——依赖方向 MirrorModule → MentorModule，记忆反向读镜子数据故用全局模块解环。
+
+**导师回应契约（2026-08-19 ai-mentor-core 提升）**：镜子回答后的导师回应 ≤60 字、单行、不追问（不以问号结尾）、不复述用户原文；生成失败落 `null`（不阻塞主流程），前端回落固定文案。
+
 ## 2. 系统架构
 
 ```
@@ -51,16 +55,19 @@
 
 > 已落地表结构以 `backend/migrations/*.sql` 为准（2026-08-18 mirror-moment 起）。
 
-### User（已落地，2026-08-18）
+### User（已落地，2026-08-18；导师人格 2026-08-19）
 - `id BIGSERIAL`, `device_id VARCHAR(64) UNIQUE`（匿名设备标识）, `created_at`
-- 待补：导师人格配置、订阅状态、账号绑定（`user_identities`）
+- `mentor_name VARCHAR(32) DEFAULT '默'`, `mentor_style VARCHAR(16) DEFAULT 'gentle'`（gentle/socratic/companion，`GET/PUT /api/mentor/profile` 读写）
+- 待补：订阅状态、账号绑定（`user_identities`）
 
-### MirrorEntry（声音档案，已落地，2026-08-18）
+### MirrorEntry（声音档案，已落地 2026-08-18；导师回应 2026-08-19）
 - `user_id` FK, `entry_date DATE`（Asia/Shanghai 日历日）, `question`, `question_source('llm'|'bank')`, `answer NULL=未回答`, `answered_at`
+- `mentor_reply TEXT NULL`（导师回应；NULL = 未回答或生成失败）
 - `UNIQUE(user_id, entry_date)`——一天一问题一回答，当天可改
 
 ### MentorMemory（导师记忆）
 - 用户回答、日课完成度、收藏、情绪变化——产品的数据护城河
+- V1 已落地（2026-08-19）：非表结构，`MemoryProvider` 接口 + 近 14 天镜子回答原文注入（cap 3000 字）；蒸馏事实表留到 weekly-report 变更
 
 ### CangItem（藏）
 - 收藏的句子/顿悟、主题标签、来源

@@ -9,9 +9,11 @@ const { createMock } = vi.hoisted(() => ({ createMock: vi.fn() }));
 // 1. 工厂里写 class + 参数属性会把已 catch 的 rejection 误报为 unhandled——用 vi.fn() 构造器形式
 // 2. mockResolvedValue 之后再 mockReset 会让后续 rejection 被误报——用 Once 变体，不用 beforeEach reset
 vi.mock("openai", () => ({
-  default: vi.fn().mockImplementation(() => ({
-    chat: { completions: { create: createMock } },
-  })),
+  // 注意：不能用箭头函数——vitest 4 对 new 调用会把 new.target 传给实现，
+  // 箭头函数不可作为构造器（"is not a constructor"）
+  default: vi.fn().mockImplementation(function () {
+    return { chat: { completions: { create: createMock } } };
+  }),
 }));
 
 import { LlmProbe } from "../src/health/llm.probe";
