@@ -262,6 +262,8 @@ Do not create decorative gradients, nested cards, or one-off visual values.
 - **输入框**：白底、hairline 边、圆角 12、13/14 内边距
 - **历史/回顾条目**：10px 淡墨元信息行 + 15px 衬线「回答」，条目间 hairline 分隔，无卡片
 - **页面留白**：左右 26px，问句区上边距 44px
+- **导师回应卡**（ai-mentor-core 新增）：朱砂 8% 底 + 圆角 12，内边距 14/12/14/13；卡内 10px 朱砂「{导师名} · 回应」+ 15px 衬线回应正文；`mentorReply` 为空时回落实体文案「已记下。明天见。」
+- **设置页选项卡**（ai-mentor-core 新增，导师风格单选等场景复用）：白底 hairline 边圆角 12；选中态 = 朱砂边 + 朱砂 8% 底 + 标题朱砂 600；说明文字 11px 淡墨。设置页保存用 `ZjPrimaryButton` 右对齐；保存失败 SnackBar 提示且不丢已填内容
 
 ## 文案语气
 

@@ -12,6 +12,8 @@ export interface MirrorEntry {
   questionSource: QuestionSource;
   answer: string | null;
   answeredAt: string | null;
+  /** 导师回应，NULL = 无（未回答 / 生成失败） */
+  mentorReply: string | null;
 }
 
 interface EntryRow {
@@ -22,6 +24,7 @@ interface EntryRow {
   question_source: QuestionSource;
   answer: string | null;
   answered_at: Date | null;
+  mentor_reply: string | null;
 }
 
 function toEntry(row: EntryRow): MirrorEntry {
@@ -33,11 +36,12 @@ function toEntry(row: EntryRow): MirrorEntry {
     questionSource: row.question_source,
     answer: row.answer,
     answeredAt: row.answered_at ? row.answered_at.toISOString() : null,
+    mentorReply: row.mentor_reply,
   };
 }
 
 const ENTRY_COLS =
-  "id, user_id, entry_date, question, question_source, answer, answered_at";
+  "id, user_id, entry_date, question, question_source, answer, answered_at, mentor_reply";
 
 /**
  * 镜子时刻数据访问：一天一问题一回答（UNIQUE(user_id, entry_date)）。
@@ -90,7 +94,7 @@ export class MirrorRepository {
     return toEntry(rows[0]);
   }
 
-  /** 近 N 天已回答内容（供 LLM 个性化生成问题），日期倒序 */
+  /** 近 N 天已回答内容（供 LLM 个性化生成问题 / 导师记忆注入），日期倒序 */
   async findRecentAnswers(userId: number, sinceDate: string): Promise<MirrorEntry[]> {
     const { rows } = await this.db.pool.query<EntryRow>(
       `SELECT ${ENTRY_COLS} FROM mirror_entries
@@ -99,6 +103,17 @@ export class MirrorRepository {
       [userId, sinceDate],
     );
     return rows.map(toEntry);
+  }
+
+  /** 写入导师回应（当天改回答时服务层会重新生成并覆盖） */
+  async updateMentorReply(userId: number, entryDate: string, reply: string): Promise<void> {
+    const { rowCount } = await this.db.pool.query(
+      `UPDATE mirror_entries
+         SET mentor_reply = $3, updated_at = NOW()
+       WHERE user_id = $1 AND entry_date = $2`,
+      [userId, entryDate, reply],
+    );
+    if (!rowCount) throw new Error("updateMentorReply: entry not found");
   }
 
   /** 昨日已回答条目（供「昨日回顾」展示），无则 null */

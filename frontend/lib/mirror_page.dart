@@ -6,10 +6,18 @@ import "theme.dart";
 /// 镜子时刻页（原型 v2 屏 02）：每日一问 + 文字回答。
 /// 三态：loading / error+重试 / 内容（未回答输入态 · 已回答展示态）。
 class MirrorPage extends StatefulWidget {
-  const MirrorPage({super.key, required this.api, required this.onOpenEntries});
+  const MirrorPage({
+    super.key,
+    required this.api,
+    required this.onOpenEntries,
+    required this.onOpenMentor,
+  });
 
   final MirrorApiClient api;
   final VoidCallback onOpenEntries;
+
+  /// 打开导师设置页；返回后刷新 today（署名/风格可能已改）
+  final Future<void> Function() onOpenMentor;
 
   @override
   State<MirrorPage> createState() => _MirrorPageState();
@@ -56,6 +64,11 @@ class _MirrorPageState extends State<MirrorPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  Future<void> _openMentor() async {
+    await widget.onOpenMentor();
+    if (mounted) _retry();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,19 +99,32 @@ class _MirrorPageState extends State<MirrorPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  GestureDetector(
-                    onTap: widget.onOpenEntries,
-                    child: Text(
-                      "档案",
-                      style: Zj.meta(size: Zj.fsUi),
-                      semanticsLabel: "打开声音档案",
-                    ),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: widget.onOpenEntries,
+                        child: Text(
+                          "档案",
+                          style: Zj.meta(size: Zj.fsUi),
+                          semanticsLabel: "打开声音档案",
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      GestureDetector(
+                        onTap: _openMentor,
+                        child: Text(
+                          "导师",
+                          style: Zj.meta(size: Zj.fsUi),
+                          semanticsLabel: "打开导师设置",
+                        ),
+                      ),
+                    ],
                   ),
                   Text("镜子时刻 · ${_formatDate(today.date)}", style: Zj.meta()),
                 ],
               ),
               const SizedBox(height: 44),
-              Text("默 · 你的导师", style: Zj.meta(color: Zj.cinnabar)),
+              Text("${today.mentorName} · 你的导师", style: Zj.meta(color: Zj.cinnabar)),
               const SizedBox(height: 12),
               Text("「${today.question}」", style: Zj.serif(size: Zj.fsQuestion)),
               const SizedBox(height: 12),
@@ -117,10 +143,13 @@ class _MirrorPageState extends State<MirrorPage> {
                 const SizedBox(height: 30),
                 _AnswerBlock(meta: "今天 · ${_formatDate(today.date)}", text: today.answerText!),
                 const SizedBox(height: 14),
-                const Text(
-                  "已记下。明天见。",
-                  style: TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim, height: 1.7),
-                ),
+                if (today.mentorReply != null)
+                  _MentorReplyBlock(name: today.mentorName, reply: today.mentorReply!)
+                else
+                  const Text(
+                    "已记下。明天见。",
+                    style: TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim, height: 1.7),
+                  ),
               ],
             ],
           ),
@@ -179,8 +208,35 @@ class _AnswerBlock extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.onRetry});
+/// 导师回应卡（原型 v2 屏 02）：朱砂 8% 底 + 导师署名 + 衬线回应正文
+class _MentorReplyBlock extends StatelessWidget {
+  const _MentorReplyBlock({required this.name, required this.reply});
+
+  final String name;
+  final String reply;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+      decoration: BoxDecoration(
+        color: Zj.cinnabarSoft,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("$name · 回应", style: Zj.meta(color: Zj.cinnabar)),
+          const SizedBox(height: 7),
+          Text(reply, style: Zj.serif(size: Zj.fsAnswer, height: 1.7)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {  const _ErrorState({required this.onRetry});
 
   final VoidCallback onRetry;
 
