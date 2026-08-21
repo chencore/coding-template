@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "cang_api.dart";
 import "mirror_api.dart";
 import "renwen_api.dart";
 import "theme.dart";
@@ -8,9 +9,17 @@ import "theme.dart";
 /// 自上而下 = 最新回应卡 → 困惑输入 → 人物选择卡 → 召唤按钮 → 过往召唤列表。
 /// 429 提示「今天已请过三次了」；503/不可达给可重试提示；已填困惑不丢。
 class RenwenPage extends StatefulWidget {
-  const RenwenPage({super.key, required this.api, required this.mentorName});
+  const RenwenPage({
+    super.key,
+    required this.api,
+    required this.cang,
+    required this.mentorName,
+  });
 
   final RenwenApiClient api;
+
+  /// 藏·收藏出口（回应卡的「收进藏里」）
+  final CangApiClient cang;
 
   /// 导师名字：回应卡引荐语「{导师} 请来了 {人物}」（导师退居引荐位，决策 4）
   final String mentorName;
@@ -29,6 +38,7 @@ class _RenwenPageState extends State<RenwenPage> {
   /// null = 让导师代选（默认）
   String? _selectedFigureId;
   bool _summoning = false;
+  bool _collecting = false;
   RenwenSummon? _latest;
   String? _errorMsg;
   List<RenwenFigure>? _figures;
@@ -95,6 +105,27 @@ class _RenwenPageState extends State<RenwenPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  /// 把最新一条人文回应收进藏里（sourceLabel 用「人物 · 《篇名》」）
+  Future<void> _collectLatest() async {
+    final latest = _latest;
+    if (latest == null || _collecting) return;
+    setState(() => _collecting = true);
+    try {
+      await widget.cang.collect(
+        text: latest.response,
+        sourceType: "renwen_reply",
+        sourceLabel: "${latest.figureName} · ${latest.sourceTitle}",
+      );
+      _showSnack("已收进藏里。");
+    } on MirrorApiException {
+      _showSnack("没收进去。稍后再试。");
+    } on MirrorApiUnreachable {
+      _showSnack("没连上。稍后再试。");
+    } finally {
+      if (mounted) setState(() => _collecting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,9 +182,23 @@ class _RenwenPageState extends State<RenwenPage> {
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
-            child: Text(
-              "今天还能再请 ${_latest!.remainingToday} 次",
-              style: const TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: _collectLatest,
+                  child: const Text(
+                    "收进藏里",
+                    style: TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim),
+                    semanticsLabel: "收进藏里",
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  "今天还能再请 ${_latest!.remainingToday} 次",
+                  style: const TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),

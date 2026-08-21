@@ -4,6 +4,8 @@ import "package:zhaojian/entries_page.dart";
 import "package:zhaojian/mirror_api.dart";
 import "package:zhaojian/mirror_page.dart";
 
+import "fake_cang_api.dart";
+
 /// 手搓假 client（不引 mock 框架）：队列式返回/抛错
 class FakeApi extends MirrorApiClient {
   FakeApi() : super(baseUrl: "http://fake", deviceId: "dev-test");
@@ -54,7 +56,7 @@ void main() {
   group("镜子时刻页", () {
     testWidgets("未回答态：问句/导师署名/昨日回顾/输入与说完按钮", (tester) async {
       final api = FakeApi()..todayResult = unansweredToday;
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, cang: FakeCangApi(), onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {}, onOpenCang: () {})));
       await tester.pumpAndSettle();
 
       expect(find.text("默 · 你的导师"), findsOneWidget);
@@ -69,7 +71,7 @@ void main() {
       final api = FakeApi()
         ..todayResult = unansweredToday
         ..submitResult = answeredToday;
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, cang: FakeCangApi(), onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {}, onOpenCang: () {})));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), "橘猫蹭了我一下");
@@ -83,7 +85,7 @@ void main() {
 
     testWidgets("后端不可达：错误态 + 重试恢复", (tester) async {
       final api = FakeApi()..todayResult = const MirrorApiUnreachable();
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, cang: FakeCangApi(), onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {}, onOpenCang: () {})));
       await tester.pumpAndSettle();
       expect(find.text("没连上。稍后再试。"), findsOneWidget);
 
@@ -104,7 +106,7 @@ void main() {
           mentorName: "远山",
           mentorReply: "被橘猫选中了，这是好日子。",
         );
-      await tester.pumpWidget(wrap(MirrorPage(api: api, onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {})));
+      await tester.pumpWidget(wrap(MirrorPage(api: api, cang: FakeCangApi(), onOpenEntries: () {}, onOpenMentor: () async {}, onOpenRenwen: (_) {}, onOpenCang: () {})));
       await tester.pumpAndSettle();
 
       expect(find.text("远山 · 你的导师"), findsOneWidget);
@@ -121,12 +123,68 @@ void main() {
         onOpenEntries: () {},
         onOpenMentor: () async {},
         onOpenRenwen: (name) => passedName = name,
+        onOpenCang: () {},
+        cang: FakeCangApi(),
       )));
       await tester.pumpAndSettle();
 
       expect(find.text("迷茫时，请前人聊聊 →"), findsOneWidget);
       await tester.tap(find.text("迷茫时，请前人聊聊 →"));
       expect(passedName, "默");
+    });
+
+    testWidgets("头部「藏」入口可见可点（场景 12）", (tester) async {
+      final api = FakeApi()..todayResult = unansweredToday;
+      var opened = false;
+      await tester.pumpWidget(wrap(MirrorPage(
+        api: api,
+        cang: FakeCangApi(),
+        onOpenEntries: () {},
+        onOpenMentor: () async {},
+        onOpenRenwen: (_) {},
+        onOpenCang: () => opened = true,
+      )));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text("藏"));
+      expect(opened, isTrue);
+    });
+
+    testWidgets("已回答态：回答块与导师回应卡各有「收进藏里」，点击即收藏（场景 12）", (tester) async {
+      final api = FakeApi()
+        ..todayResult = const MirrorToday(
+          date: "2026-08-18",
+          question: "今天有什么小事比预期好？",
+          questionSource: "llm",
+          answerText: "橘猫蹭了我一下",
+          answeredAt: "2026-08-18T02:00:00Z",
+          mentorName: "默",
+          mentorReply: "被橘猫选中了，这是好日子。",
+        );
+      final cang = FakeCangApi();
+      await tester.pumpWidget(wrap(MirrorPage(
+        api: api,
+        cang: cang,
+        onOpenEntries: () {},
+        onOpenMentor: () async {},
+        onOpenRenwen: (_) {},
+        onOpenCang: () {},
+      )));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text("收进藏里").first, 200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text("收进藏里"), findsNWidgets(2));
+
+      // 第一个入口 = 自己的回答（mirror_answer）
+      await tester.tap(find.text("收进藏里").first);
+      await tester.pumpAndSettle();
+      expect(cang.collected.single.sourceType, "mirror_answer");
+      expect(cang.collected.single.text, "橘猫蹭了我一下");
+      expect(cang.collected.single.sourceLabel, "镜子");
+      expect(find.text("已收进藏里。"), findsOneWidget);
     });
   });
 

@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 
 import "device_id.dart";
+import "cang_api.dart";
+import "cang_page.dart";
 import "entries_page.dart";
 import "health.dart";
 import "mentor_api.dart";
@@ -52,8 +54,10 @@ class MirrorEntryPoint extends StatelessWidget {
         final api = MirrorApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
         final mentorApi = MentorApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
         final renwenApi = RenwenApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
+        final cangApi = CangApiClient(baseUrl: apiBaseUrl, deviceId: snapshot.data!);
         return MirrorPage(
           api: api,
+          cang: cangApi,
           onOpenEntries: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => EntriesPage(api: api)),
@@ -67,8 +71,17 @@ class MirrorEntryPoint extends StatelessWidget {
           onOpenRenwen: (mentorName) {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => RenwenPage(api: renwenApi, mentorName: mentorName),
+                builder: (_) => RenwenPage(
+                  api: renwenApi,
+                  cang: cangApi,
+                  mentorName: mentorName,
+                ),
               ),
+            );
+          },
+          onOpenCang: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => CangPage(api: cangApi)),
             );
           },
         );

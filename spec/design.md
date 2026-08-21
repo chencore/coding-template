@@ -76,8 +76,10 @@
 - `user_id` FK, `figure VARCHAR(16)`（canon 人物 id）, `confusion TEXT NULL`, `response TEXT`, `source_id`, `source_title`（库内篇名）, `created_at`
 - 只增不改：召唤即历史；每日上限 3 次按（user_id, 上海当日）计数；人物代选与出处轮转按累计召唤数取模
 
-### CangItem（藏）
-- 收藏的句子/顿悟、主题标签、来源
+### CangItem（藏，已落地 2026-08-21）
+- 三表：`cang_items`（`user_id` FK, `text`, `source_type`：mirror_answer/mentor_reply/renwen_reply/manual, `source_label ≤64 字 NULL`, `created_at`）；`cang_themes`（`UNIQUE(user_id, name)`，主题名 ≤8 字）；`cang_item_themes`（关联表，双向 `ON DELETE CASCADE`）
+- 收藏时 LLM 增量打标（≤2 主题/条，优先复用已有）；打标失败条目落「未归组」，不阻塞收藏
+- 删除条目后 0 条主题自动清理；`source_label` 是客户端写入的展示物（如「镜子」「王阳明 · 《传习录》」），不作跨模块事实源
 
 ### Lesson（日课）
 - 微行动内容、来源依据（来自哪次表达）、完成感受
@@ -109,6 +111,11 @@
 - **选择**：拦截时刻只做提示与引导，不做硬性锁机
 - **放弃的方案**：强制禁用/锁机
 - **理由**：对抗意志力必败（对手是推荐系统）；且降低 iOS 审核拒绝风险
+
+### 决策 5：AI 出口统一 + 失败语义按「主/辅」分级（2026-08-21 cang 沉淀）
+- **选择**：所有 LLM 调用只经 `MentorService` 场景网关（mirror_question / mentor_reply / renwen_reply / cang_tag），业务模块不得直连 LLM
+- **失败语义**：主动作失败 = 显式错误不假兜底（renwen 召唤 503 不落库）；有主流程可让路的增强才允许缺省降级（cang 收藏是主行动、打标是增强 → 打标失败落「未归组」照常 201）
+- **理由**：用户不为 AI 故障买单，但也不让增强故障拖死主链路；出口统一保证人格一致与可观测
 
 ## 7. 待定项（Open Questions）
 

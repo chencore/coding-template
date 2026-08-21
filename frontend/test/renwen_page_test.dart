@@ -4,6 +4,8 @@ import "package:zhaojian/mirror_api.dart";
 import "package:zhaojian/renwen_api.dart";
 import "package:zhaojian/renwen_page.dart";
 
+import "fake_cang_api.dart";
+
 /// 手搓假 client（不引 mock 框架）：队列式返回/抛错
 class FakeRenwenApi extends RenwenApiClient {
   FakeRenwenApi() : super(baseUrl: "http://fake", deviceId: "dev-test");
@@ -81,7 +83,7 @@ Future<void> tapVisible(WidgetTester tester, Finder finder) async {
 void main() {
   group("召唤页", () {
     testWidgets("渲染：人物选择卡（4 人 + 让导师代选默认）+ 输入 + 按钮", (tester) async {
-      await tester.pumpWidget(wrap(RenwenPage(api: fakeOk(), mentorName: "默")));
+      await tester.pumpWidget(wrap(RenwenPage(api: fakeOk(), cang: FakeCangApi(), mentorName: "默")));
       await tester.pumpAndSettle();
 
       expect(find.text("让导师代选"), findsOneWidget);
@@ -98,7 +100,7 @@ void main() {
 
     testWidgets("召唤成功：回应卡含引荐语 + 正文 + 出处 + 剩余次数（场景 12）", (tester) async {
       final api = fakeOk();
-      await tester.pumpWidget(wrap(RenwenPage(api: api, mentorName: "默")));
+      await tester.pumpWidget(wrap(RenwenPage(api: api, cang: FakeCangApi(), mentorName: "默")));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), "想辞职又怕选错。");
@@ -113,10 +115,27 @@ void main() {
       expect(find.text("今天还能再请 2 次"), findsOneWidget);
     });
 
+    testWidgets("回应卡「收进藏里」：sourceLabel 带人物与出处（场景 12）", (tester) async {
+      final api = fakeOk();
+      final cang = FakeCangApi();
+      await tester.pumpWidget(wrap(RenwenPage(api: api, cang: cang, mentorName: "默")));
+      await tester.pumpAndSettle();
+
+      await tapVisible(tester, find.text("请他聊聊"));
+      expect(find.text("默 请来了 王阳明"), findsOneWidget);
+
+      await tester.tap(find.text("收进藏里"));
+      await tester.pumpAndSettle();
+      expect(cang.collected.single.sourceType, "renwen_reply");
+      expect(cang.collected.single.sourceLabel, "王阳明 · 《传习录》");
+      expect(cang.collected.single.text, contains("你未看此花时"));
+      expect(find.text("已收进藏里。"), findsOneWidget);
+    });
+
     testWidgets("429 上限：提示「今天已请过三次了」，已填困惑不丢（场景 13）", (tester) async {
       final api = fakeOk()
         ..summonResult = const MirrorApiException("daily_limit_reached", 429);
-      await tester.pumpWidget(wrap(RenwenPage(api: api, mentorName: "默")));
+      await tester.pumpWidget(wrap(RenwenPage(api: api, cang: FakeCangApi(), mentorName: "默")));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), "还没问完的话");
@@ -130,7 +149,7 @@ void main() {
 
     testWidgets("不可达 / 503：可重试提示，已填困惑不丢；恢复后召唤成功（场景 13）", (tester) async {
       final api = fakeOk()..summonResult = const MirrorApiUnreachable();
-      await tester.pumpWidget(wrap(RenwenPage(api: api, mentorName: "默")));
+      await tester.pumpWidget(wrap(RenwenPage(api: api, cang: FakeCangApi(), mentorName: "默")));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField), "想辞职又怕选错。");
@@ -147,7 +166,7 @@ void main() {
 
     testWidgets("过往召唤列表：人物 + 出处 + 回应节选（场景 14）", (tester) async {
       final api = fakeOk()..sessionsResult = const [pastSession];
-      await tester.pumpWidget(wrap(RenwenPage(api: api, mentorName: "默")));
+      await tester.pumpWidget(wrap(RenwenPage(api: api, cang: FakeCangApi(), mentorName: "默")));
       await tester.pumpAndSettle();
 
       // 「过往」区在视口下方，先滚到可见
@@ -164,7 +183,7 @@ void main() {
 
     testWidgets("首屏加载失败：错误态 + 重试恢复", (tester) async {
       final api = fakeOk()..figuresResult = const MirrorApiUnreachable();
-      await tester.pumpWidget(wrap(RenwenPage(api: api, mentorName: "默")));
+      await tester.pumpWidget(wrap(RenwenPage(api: api, cang: FakeCangApi(), mentorName: "默")));
       await tester.pumpAndSettle();
       expect(find.text("没连上。稍后再试。"), findsOneWidget);
 

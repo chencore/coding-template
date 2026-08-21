@@ -31,6 +31,23 @@
 
 <!-- 最新条目在最上面 -->
 
+### 2026-08-21 · cang-knowledge-base（父分支：version/v1.0）
+
+**摘要**：落地 R-v1.0-CK-4 藏——新 cang 模块（迁移 0004 三表：`cang_items` / `cang_themes`(UNIQUE user+name) / `cang_item_themes`）；MentorService 新增 `cang_tag` 场景（收藏时增量打标：≤2 主题、单个 ≤8 字、优先复用已有；打标失败降级「未归组」不阻塞 201）；接口 POST/GET/DELETE（四码 400、404 不泄露存在性、GET map 剥掉内部 userId）；前端镜子页两处 + 召唤页一处「收进藏里」入口 + 头部「藏」入口 + 藏页（手动收藏、主题分组浏览、长按删除确认）。后端 111 测试、前端 35 测试全绿；场景 1~11 curl 实证（含真实 LLM 打标与主题复用、打标失败降级）、12~15 模拟器截图验证。
+
+**关键决策**：
+- 先收后标、打标静默降级：收藏是主行动、打标是增强——打标失败落「未归组」不阻塞 201（对照 renwen 召唤类主动作失败 = 显式 503 的原则：有主流程可让路才允许缺省）
+- cang_tag 走 MentorService 网关：导师人格整理思想地图，AI 出口统一不破
+- sourceLabel 客户端写入（≤64 字）：是展示物不是事实源，不跨模块反查
+
+**踩坑 / 经验**：
+- vitest：`null ?? default` 把显式 null 当缺省——可选参数要区分"没传"用 `"key" in opts`
+- `upsertTheme` 用 `ON CONFLICT (user_id, name) DO UPDATE` 拿 id 会有 sequence 空洞（id 跳号无害，勿误判为 bug）
+- 来源 label 勿含日期：藏页条目 meta 已拼 createdAt 日期，label 再带日期会重复（修复后旧行保留旧 label 属预期）
+
+**相关产出**：
+- 归档位置：`openspec/changes/archive/2026-08-21-cang-knowledge-base/`（含 screenshots/）
+
 ### 2026-08-20 · renwen-mentors（父分支：version/v1.0）
 
 **摘要**：落地 R-v1.0-CK-3 人文导师团——新 renwen 模块（canon 出处库代码常量：苏格拉底/马可·奥勒留/王阳明/曾国藩 × 3~4 条真实原典；迁移 0003 `renwen_sessions`）；MentorService 新增 `renwen_reply` 场景（人物 persona 顶替导师人格、记忆照注）；召唤接口（指定人物/导师代选轮转、出处轮转、每日上限 3 次 429、LLM 失败显式 503 不落库）+ 人物列表/历史回看接口；前端镜子页常驻入口 + 召唤页（困惑输入、人物选择卡、回应卡含引荐语与出处、过往列表）。后端 84 测试、前端 28 测试全绿；场景 1~10 curl 实证（含真实 LLM 召唤、429/503/400）、11~14 模拟器截图验证。

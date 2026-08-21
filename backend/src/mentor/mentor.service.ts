@@ -8,6 +8,8 @@ import { UsersRepository } from "../users/users.repository";
 const MAX_QUESTION_LEN = 40;
 const MAX_REPLY_LEN = 60;
 const MAX_RENWEN_REPLY_LEN = 200;
+const MAX_CANG_THEMES = 2;
+const MAX_CANG_THEME_LEN = 8;
 
 export interface GeneratedQuestion {
   question: string;
@@ -34,6 +36,11 @@ const SCENE_RULES = {
 - 允许追问（提问式人物可以用问句结尾）
 - 不要直接照抄出处原文，把那条思想说到用户的处境上
 - 只输出回应正文`,
+  cang_tag: `场景：用户收藏了一句话，你要为这句话整理思想地图——选出它属于的主题。
+- 每行输出一个主题名，最多 2 个，每个不超过 8 字
+- 优先从用户已有主题里选（原样照抄）；都不合适才新建主题
+- 主题名要朴素具体（如「选择」「怕输」「日常的光」），不要抽象大词
+- 只输出主题名，不要序号、不要解释`,
 } as const;
 
 /** renwen 场景失败原因：日志与 503 判定用，不含用户内容 */
@@ -168,6 +175,44 @@ export class MentorService {
     }
   }
 
+  /**
+   * 场景：藏·思想地图打标。
+   * 从「该用户已有主题 + 可新建」选 1~2 个主题；任何失败返回 null——
+   * 收藏是主行动，打标是增强，标不上就留「未归组」（design.md 决策 2/3）。
+   */
+  async askCangThemes(
+    userId: number,
+    payload: { text: string; existingThemes: string[] },
+  ): Promise<string[] | null> {
+    const persona = await this.users.getMentorProfile(userId);
+    const startedAt = Date.now();
+    const existingBlock = payload.existingThemes.length
+      ? `用户已有主题：${payload.existingThemes.join("、")}\n`
+      : "用户还没有任何主题。\n";
+
+    try {
+      const raw = await this.llm.chat(
+        buildSystemPrompt(persona, SCENE_RULES.cang_tag),
+        `${existingBlock}用户收藏的这句话：\n${payload.text}\n请输出主题名。`,
+        800,
+      );
+      const themes = validateCangThemes(raw, payload.existingThemes);
+      if (!themes) {
+        this.logger.warn(`ask cang_tag: invalid_output (${Date.now() - startedAt}ms)`);
+        return null;
+      }
+      this.logger.log(
+        `ask cang_tag: llm ok, ${themes.length} theme(s) (${Date.now() - startedAt}ms)`,
+      );
+      return themes;
+    } catch (err) {
+      // 只记错误类别与耗时；不记请求/响应内容（含收藏文本）
+      const reason = err instanceof LlmNotConfigured ? "not_configured" : "llm_error";
+      this.logger.warn(`ask cang_tag: ${reason} (${Date.now() - startedAt}ms)`);
+      return null;
+    }
+  }
+
   private bankQuestion(
     entryDate: string,
     reason: QuestionFallbackReason,
@@ -205,4 +250,33 @@ export function validateRenwenReply(raw: string): string | null {
   const r = raw.trim().replace(/^[「"']+|[」"']+$/g, "").trim();
   if (r.length === 0 || r.length > MAX_RENWEN_REPLY_LEN) return null;
   return r;
+}
+
+/**
+ * 藏·打标输出校验：按行解析、剥序号与引号、去重，≤2 个、单个 ≤8 字。
+ * 与已有主题匹配（忽略空白/大小写）时照抄已有写法；其余视为新建。空结果 → null。
+ */
+export function validateCangThemes(
+  raw: string,
+  existingThemes: string[],
+): string[] | null {
+  const existingByKey = new Map(
+    existingThemes.map((n) => [n.replace(/\s+/g, "").toLowerCase(), n]),
+  );
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const line of raw.split(/[\n、，,;；]/)) {
+    const name = line
+      .replace(/^\s*(?:\d+[.、)]|[-*•])\s*/, "")
+      .replace(/[「」"'“”]/g, "")
+      .trim();
+    if (!name || name.length > MAX_CANG_THEME_LEN) continue;
+    const canonical = existingByKey.get(name.replace(/\s+/g, "").toLowerCase()) ?? name;
+    const key = canonical.replace(/\s+/g, "").toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(canonical);
+    if (out.length >= MAX_CANG_THEMES) break;
+  }
+  return out.length ? out : null;
 }

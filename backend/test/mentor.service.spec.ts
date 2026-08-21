@@ -5,6 +5,7 @@ import {
   RenwenReplyFailed,
   validateQuestion,
   validateRenwenReply,
+  validateCangThemes,
   validateReply,
 } from "../src/mentor/mentor.service";
 import type { MemoryProvider } from "../src/mentor/memory";
@@ -200,5 +201,65 @@ describe("validateRenwenReply", () => {
     expect(validateRenwenReply("")).toBeNull();
     expect(validateRenwenReply("字".repeat(200))).not.toBeNull();
     expect(validateRenwenReply("字".repeat(201))).toBeNull();
+  });
+});
+
+describe("MentorService.askCangThemes（藏·思想地图打标）", () => {
+  it("正常输出：解析出主题；system 含场景规则，user 含已有主题与收藏文本", async () => {
+    const { service, chat } = makeService({
+      chatImpl: async () => "选择\n怕输",
+    });
+    const themes = await service.askCangThemes(7, {
+      text: "想辞职又怕选错。",
+      existingThemes: ["选择"],
+    });
+    expect(themes).toEqual(["选择", "怕输"]);
+    const [system, user] = chat.mock.calls[0] as [string, string, number];
+    expect(system).toContain("思想地图");
+    expect(user).toContain("选择");
+    expect(user).toContain("想辞职又怕选错。");
+  });
+
+  it("复用已有主题忽略空白差异（照抄已有写法）", async () => {
+    const { service } = makeService({ chatImpl: async () => " 选 择 " });
+    const themes = await service.askCangThemes(7, {
+      text: "t",
+      existingThemes: ["选择"],
+    });
+    expect(themes).toEqual(["选择"]);
+  });
+
+  it("LLM 失败 / 未配置：返回 null（不抛，收藏主流程继续）", async () => {
+    const a = makeService({
+      chatImpl: async () => {
+        throw new Error("timeout");
+      },
+    });
+    expect(await a.service.askCangThemes(7, { text: "t", existingThemes: [] })).toBeNull();
+    const b = makeService({
+      chatImpl: async () => {
+        throw new LlmNotConfigured();
+      },
+    });
+    expect(await b.service.askCangThemes(7, { text: "t", existingThemes: [] })).toBeNull();
+  });
+
+  it("垃圾输出：返回 null", async () => {
+    const { service } = makeService({ chatImpl: async () => "\n \n" });
+    expect(await service.askCangThemes(7, { text: "t", existingThemes: [] })).toBeNull();
+  });
+});
+
+describe("validateCangThemes", () => {
+  it("剥序号/引号、去重、超 2 截断、单个超 8 字丢弃", () => {
+    expect(validateCangThemes("1. 「选择」\n2. 选择\n3. 怕输\n这是一个特别特别长的主题名", [])).toEqual([
+      "选择",
+      "怕输",
+    ]);
+  });
+
+  it("空结果 / 全非法行 → null", () => {
+    expect(validateCangThemes("", [])).toBeNull();
+    expect(validateCangThemes("这是一个特别特别长的主题名", [])).toBeNull();
   });
 });

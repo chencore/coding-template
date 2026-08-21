@@ -26,7 +26,7 @@
 - [x] **mirror-moment** — 镜子时刻：每日一问、文字回答、声音档案存储（R-v1.0-CK-1）
 - [x] **ai-mentor-core** — 导师人格：命名/风格选择、统一 AI 出口、用户记忆（R-v1.0-CK-2）
 - [x] **renwen-mentors** — 人文导师团：历史人物视角回应 + 出处标注（R-v1.0-CK-3）
-- [ ] **cang-knowledge-base** — 藏：一键收藏、思想地图主题聚类、回看（R-v1.0-CK-4）
+- [x] **cang-knowledge-base** — 藏：一键收藏、思想地图主题聚类、回看（R-v1.0-CK-4）
 - [ ] **first-run-aha** — 首次体验：3 个快问 → 60 秒「此刻的你」速写（R-v1.0-CK-5）
 
 ### M2 · 日课与周报

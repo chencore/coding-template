@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "cang_api.dart";
 import "mirror_api.dart";
 import "theme.dart";
 
@@ -9,12 +10,18 @@ class MirrorPage extends StatefulWidget {
   const MirrorPage({
     super.key,
     required this.api,
+    required this.cang,
     required this.onOpenEntries,
     required this.onOpenMentor,
     required this.onOpenRenwen,
+    required this.onOpenCang,
   });
 
   final MirrorApiClient api;
+
+  /// 藏·收藏出口（回答块 / 导师回应卡的「收进藏里」）
+  final CangApiClient cang;
+
   final VoidCallback onOpenEntries;
 
   /// 打开导师设置页；返回后刷新 today（署名/风格可能已改）
@@ -22,6 +29,9 @@ class MirrorPage extends StatefulWidget {
 
   /// 打开人文导师团召唤页；带上导师名字（回应卡引荐语用）
   final void Function(String mentorName) onOpenRenwen;
+
+  /// 打开藏页（头部「藏」入口）
+  final VoidCallback onOpenCang;
 
   @override
   State<MirrorPage> createState() => _MirrorPageState();
@@ -31,6 +41,7 @@ class _MirrorPageState extends State<MirrorPage> {
   final TextEditingController _input = TextEditingController();
   late Future<MirrorToday> _today = widget.api.fetchToday();
   bool _submitting = false;
+  bool _collecting = false;
 
   @override
   void dispose() {
@@ -66,6 +77,30 @@ class _MirrorPageState extends State<MirrorPage> {
   void _showSnack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  /// 收进藏里（静默收藏）：成功轻提示；失败可重试、不打断当前页
+  Future<void> _collect({
+    required String text,
+    required String sourceType,
+    String? sourceLabel,
+  }) async {
+    if (_collecting) return;
+    setState(() => _collecting = true);
+    try {
+      await widget.cang.collect(
+        text: text,
+        sourceType: sourceType,
+        sourceLabel: sourceLabel,
+      );
+      _showSnack("已收进藏里。");
+    } on MirrorApiException {
+      _showSnack("没收进去。稍后再试。");
+    } on MirrorApiUnreachable {
+      _showSnack("没连上。稍后再试。");
+    } finally {
+      if (mounted) setState(() => _collecting = false);
+    }
   }
 
   Future<void> _openMentor() async {
@@ -122,6 +157,15 @@ class _MirrorPageState extends State<MirrorPage> {
                           semanticsLabel: "打开导师设置",
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      GestureDetector(
+                        onTap: widget.onOpenCang,
+                        child: Text(
+                          "藏",
+                          style: Zj.meta(size: Zj.fsUi),
+                          semanticsLabel: "打开藏页",
+                        ),
+                      ),
                     ],
                   ),
                   Text("镜子时刻 · ${_formatDate(today.date)}", style: Zj.meta()),
@@ -152,10 +196,24 @@ class _MirrorPageState extends State<MirrorPage> {
                   meta: "昨天 · ${_formatDate(today.yesterdayDate!)}",
                   text: today.yesterdayText!,
                 ),
+                _CollectEntry(
+                  onTap: () => _collect(
+                    text: today.yesterdayText!,
+                    sourceType: "mirror_answer",
+                    sourceLabel: "镜子",
+                  ),
+                ),
               ],
               if (today.answered) ...[
                 const SizedBox(height: 30),
                 _AnswerBlock(meta: "今天 · ${_formatDate(today.date)}", text: today.answerText!),
+                _CollectEntry(
+                  onTap: () => _collect(
+                    text: today.answerText!,
+                    sourceType: "mirror_answer",
+                    sourceLabel: "镜子",
+                  ),
+                ),
                 const SizedBox(height: 14),
                 if (today.mentorReply != null)
                   _MentorReplyBlock(name: today.mentorName, reply: today.mentorReply!)
@@ -163,6 +221,14 @@ class _MirrorPageState extends State<MirrorPage> {
                   const Text(
                     "已记下。明天见。",
                     style: TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim, height: 1.7),
+                  ),
+                if (today.mentorReply != null)
+                  _CollectEntry(
+                    onTap: () => _collect(
+                      text: today.mentorReply!,
+                      sourceType: "mentor_reply",
+                      sourceLabel: "${today.mentorName} · 回应",
+                    ),
                   ),
               ],
             ],
@@ -245,6 +311,31 @@ class _MentorReplyBlock extends StatelessWidget {
           const SizedBox(height: 7),
           Text(reply, style: Zj.serif(size: Zj.fsAnswer, height: 1.7)),
         ],
+      ),
+    );
+  }
+}
+
+/// 「收进藏里」入口：fsHint 淡墨小字，右对齐贴在内容块下方（cang-knowledge-base 决策 6）
+class _CollectEntry extends StatelessWidget {
+  const _CollectEntry({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: onTap,
+        child: const Padding(
+          padding: EdgeInsets.only(top: 6),
+          child: Text(
+            "收进藏里",
+            style: TextStyle(fontSize: Zj.fsHint, color: Zj.inkDim, height: 1.7),
+            semanticsLabel: "收进藏里",
+          ),
+        ),
       ),
     );
   }
