@@ -31,6 +31,17 @@
 
 <!-- 最新条目在最上面 -->
 
+### 2026-08-21 · doc-deploy-backend（父分支：version/v1.0）
+
+**摘要**：新增 `docs/deploy-backend.md`——单 VPS 部署手册（Postgres compose + NestJS pm2 + Caddy 自动 HTTPS），按序可执行、每步带验证命令；含安全清单（5432 收口 127.0.0.1、防火墙、.env 600）与运维节（pm2 更新/回滚、pg_dump 每日备份保留 14 天、日志位置）。纯文档变更（S 级），不含部署脚手架（Dockerfile/compose 改动留待实际需要时）。
+
+**关键决策**：
+- 先文档后脚手架：部署动作人工跟文档跑一遍，跑顺了再固化成 compose/Dockerfile，避免过早抽象
+- 文档锚定代码事实：迁移启动时自动跑、全局前缀 api、健康检查 /api/health(llm)、env 清单均逐一与源码核对
+
+**相关产出**：
+- 归档位置：`openspec/changes/archive/2026-08-21-doc-deploy-backend/`
+
 ### 2026-08-21 · cang-knowledge-base（父分支：version/v1.0）
 
 **摘要**：落地 R-v1.0-CK-4 藏——新 cang 模块（迁移 0004 三表：`cang_items` / `cang_themes`(UNIQUE user+name) / `cang_item_themes`）；MentorService 新增 `cang_tag` 场景（收藏时增量打标：≤2 主题、单个 ≤8 字、优先复用已有；打标失败降级「未归组」不阻塞 201）；接口 POST/GET/DELETE（四码 400、404 不泄露存在性、GET map 剥掉内部 userId）；前端镜子页两处 + 召唤页一处「收进藏里」入口 + 头部「藏」入口 + 藏页（手动收藏、主题分组浏览、长按删除确认）。后端 111 测试、前端 35 测试全绿；场景 1~11 curl 实证（含真实 LLM 打标与主题复用、打标失败降级）、12~15 模拟器截图验证。
